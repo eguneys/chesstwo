@@ -115,6 +115,29 @@ export type PosActions<A extends HasAction> = {
 }
 
 
+export type SanMeta = {
+  to: Pos,
+  role: Role,
+  file?: File,
+  rank?: Rank,
+  promotion?: Role,
+  capture?: boolean,
+  check?: boolean,
+  mate?: boolean
+}
+
+export type LongCastles = 'o-o-o'
+export type ShortCastles = 'o-o'
+
+export type Castles = LongCastles | ShortCastles
+
+export type SanOrCastles = San | Castles
+
+export type Move = {
+  before: Situation,
+  after: Situation
+}
+
 export function isSlide(_: HasAction): _ is Slide {
   return _.action === 'slide'
 }
@@ -333,6 +356,11 @@ export function situation_moves(situation: Situation) {
   return posactions_filter(situation_slides(situation))
 }
 
+export function situation_sanorcastles(situation: Situation, sanorcastles: SanOrCastles): Move | undefined {
+
+  return undefined
+}
+
 export function valid_action_filter(a: IsAction) {
   return a.valid_turn && a.valid_ok
 }
@@ -425,6 +453,15 @@ export function pos_uci(pos: Pos) {
     rank_uci(pos_rank(pos))
 }
 
+export function move_san(move: Move): San {
+  return ''
+}
+
+export function situation_fen(situation: Situation): Fen {
+  return ''
+}
+
+
 export const initial = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
 export function fen_situation(fen: Fen): Situation | undefined {
 
@@ -461,6 +498,11 @@ export function fen_situation(fen: Fen): Situation | undefined {
   }
 }
 export const initial_situation = fen_situation(initial)!
+
+
+export function sanOrCastles(sanOrC: string): SanOrCastles | undefined {
+  return undefined
+}
 
 export function mapmap<K, A, B>(obj: Map<K, A>, fn: (k: K, a: A) => B | undefined): Map<K, B> {
   let res = new Map<K, B>()

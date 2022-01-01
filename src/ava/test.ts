@@ -5,10 +5,10 @@ import {
   situation_moves,
   uci_pos, rays, initial_situation } from '../types'
 
-test('rays', t => {
+test.skip('rays', t => {
   t.log(rays['q'].get(uci_pos('a8')!))
 })
 
-test.only('situation', t => {
+test.skip('situation', t => {
   t.log(situation_moves(initial_situation).byorig)
 })
