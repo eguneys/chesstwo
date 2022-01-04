@@ -7,6 +7,7 @@ export type CurrentAndParent = [PNode<erm.QMove> | undefined, PNode<erm.QMove>]
 
 export default class StudyBuilder {
 
+  errors: Array<[erm.Ply, erm.SanMetaWithExtra]>
   pgns: Array<erm.QPGN>;
   _tags: erm.TagMap;
   _root?: PNode<erm.QMove>;
@@ -15,6 +16,7 @@ export default class StudyBuilder {
   __current?: PNode<erm.QMove>;
 
   constructor() {
+    this.errors = []
     this.pgns = [];
     this._tags = new Map();
     this.__branchs = [];
@@ -46,9 +48,9 @@ export default class StudyBuilder {
             return after;
           } else {
             console.warn('couldnt make ts move', situation_fen(situation), _.move.san);
+            this.errors.push([_.ply, _.move])
           }
         }
-        return situation;
       });
 
       let branchPlies = [];

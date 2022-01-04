@@ -1,8 +1,5 @@
 export type Fen = string
 
-export type San = string
-
-
 export type Epos = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
 export type File = Epos
 export type Rank = Epos
@@ -115,7 +112,8 @@ export type PosActions<A extends HasAction> = {
 }
 
 
-export type SanMeta = {
+export type San = {
+  san: string,
   to: Pos,
   role: Role,
   file?: File,
@@ -126,14 +124,18 @@ export type SanMeta = {
   mate?: boolean
 }
 
-export type LongCastles = 'o-o-o'
-export type ShortCastles = 'o-o'
-
-export type Castles = LongCastles | ShortCastles
+export type Castles = {
+  castles: string,
+  king: File,
+  rook: File,
+  trip: Dir 
+}
 
 export type SanOrCastles = San | Castles
 
 export type Move = {
+  action: HasAction,
+  piece: PieceOrPawn,
   before: Situation,
   after: Situation
 }
@@ -141,6 +143,17 @@ export type Move = {
 export function isSlide(_: HasAction): _ is Slide {
   return _.action === 'slide'
 }
+
+export function isCastles(_: SanOrCastles): _ is Castles {
+  return !!(_ as Castles).castles
+}
+
+export function isSan(_: SanOrCastles): _ is San {
+  return !!(_ as San).san
+}
+
+export const left: Dir = [0, -1]
+export const right: Dir = [0, 1]
 
 export const pawn_push2_ranks: ColorMap<Rank> = {
   w: 2,
@@ -263,6 +276,12 @@ export function isRole(_: string): _ is Role {
   return roles.includes(_)
 }
 
+export function uci_role(uci: string) {
+  if (isRole(uci)) {
+    return uci
+  }
+}
+
 export function uci_piece(uci: string) {
 
   let role = uci.toLowerCase()
@@ -352,13 +371,40 @@ export function situation_slides(situation: Situation) {
   return slide_actions
 }
 
-export function situation_moves(situation: Situation) {
+export function situation_all(situation: Situation) {
+  return situation_slides(situation)
+}
+
+export function situation_valids(situation: Situation) {
   return posactions_filter(situation_slides(situation))
 }
 
+export const situation_moves = situation_valids
+
 export function situation_sanorcastles(situation: Situation, sanorcastles: SanOrCastles): Move | undefined {
 
-  return undefined
+  let valids = situation_all(situation)
+
+  if (isSan(sanorcastles)) {
+
+    let action = valids.bydest.get(sanorcastles.to)?.filter(slide => 
+      board_pos(situation.board, slide.orig)!.role == sanorcastles.role
+    )?.[0]
+
+    if (action) {
+
+      let before = situation
+      let piece = board_pos(situation.board, action.orig)!
+      let after = situation
+
+      return {
+        action,
+        before,
+        after,
+        piece
+      }
+    }
+  }
 }
 
 export function valid_action_filter(a: IsAction) {
@@ -430,6 +476,20 @@ export function slide_uci(slide: Slide) {
 export const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 export const ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
 
+export function uci_file(uci: string) {
+  let file = files.indexOf(uci[0]) + 1
+  if (isEpos(file)) {
+    return file
+  }
+}
+
+export function uci_rank(uci: string) {
+  let rank = ranks.indexOf(uci[1]) + 1
+  if (isEpos(rank)) {
+    return rank
+  }
+}
+
 export function uci_pos(uci: string) {
   let file = files.indexOf(uci[0]) + 1,
     rank = ranks.indexOf(uci[1]) + 1
@@ -453,12 +513,13 @@ export function pos_uci(pos: Pos) {
     rank_uci(pos_rank(pos))
 }
 
-export function move_san(move: Move): San {
-  return ''
+export function move_san(move: Move): string {
+  throw 'not implemented'
 }
 
+
 export function situation_fen(situation: Situation): Fen {
-  return ''
+  return '' + Math.random() 
 }
 
 
@@ -497,12 +558,94 @@ export function fen_situation(fen: Fen): Situation | undefined {
     }
   }
 }
-export const initial_situation = fen_situation(initial)!
+export const initial_situation = fen_situation(initial)!;
 
+
+export const shortCastleNotations = ["o-o", "O-O", "0-0"]
+export const longCastleNotations = ["o-o-o", "O-O-O", "0-0-0"]
+
+export const shortCastles = {
+  castles: 'O-O',
+  king: uci_file('g')!,
+  rook: uci_file('f')!,
+  trip: right
+}
+
+export const longCastles = {
+  castles: 'O-O-O',
+  king: uci_file('c')!,
+  rook: uci_file('d')!,
+  trip: left 
+}
 
 export function sanOrCastles(sanOrC: string): SanOrCastles | undefined {
-  return undefined
+  if (shortCastleNotations.includes(sanOrC)) {
+    return shortCastles;
+  } else if (longCastleNotations.includes(sanOrC)) {
+    return longCastles;
+  }
+  return san2(sanOrC) || san(sanOrC);
 }
+
+export function san2(san2: string): San | undefined {
+  let res = san2.split(' ');
+
+  if (res.length !== 8) {
+    return;
+  }
+  let [roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS] = res;
+  return makeSan(san2, roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS); 
+}
+
+export function san(san: string): San | undefined {
+  let RE = /(N|B|R|Q|K|)([a-h]?)([1-8]?)(x?)([a-h][0-9])(=?[NBRQ]?)(\+?)(\#?)/;
+
+  let m = san.match(RE);
+
+  if (m) {
+    let [_, roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS] = m;
+
+    promotionS = promotionS.replace('=', '');
+
+    return makeSan(san, roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS);
+  }  
+}
+
+
+
+export function makeSan(san: string,
+  roleS: string,
+  fileS: string,
+  rankS: string,
+  captureS: string,
+  toS: string,
+  promotionS: string,
+  checkS: string,
+  mateS: string): San | undefined {
+
+    let mate = mateS !== '',
+    check = checkS !== '',
+    capture = captureS !== '',
+    rank = rankS !== '' ? uci_rank(rankS) : undefined,
+    file = fileS !== '' ? uci_file(fileS) : undefined,
+    role = roleS !== '' ? uci_role(roleS) || 'p' : 'p',
+    promotion = promotionS !== '' ? uci_role(promotionS): undefined,
+    to = uci_pos(toS)
+
+    if (to) {
+      return {
+        san,
+        to,
+        role,
+        file,
+        rank,
+        promotion,
+        capture,
+        check,
+        mate
+      }
+    }
+  }
 
 export function mapmap<K, A, B>(obj: Map<K, A>, fn: (k: K, a: A) => B | undefined): Map<K, B> {
   let res = new Map<K, B>()

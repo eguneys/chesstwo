@@ -4,10 +4,11 @@ import Esrar from '../format'
 import { simple, result10, more, advanced } from './_fixture'
 import { move_san } from '../types'
 
-test.failing('simple', t => {
+test.only('simple', t => {
   let res = Esrar(simple)
   t.is(res.pgns.length, 1)
-  t.log(res.pgns[0].fens)
+  t.is(res.pgns[0].fens.size, 5)
+  t.log(res.errors)
 })
 
 test('result 1-0', t => {
