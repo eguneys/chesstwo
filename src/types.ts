@@ -104,11 +104,13 @@ export type Castle = IsAction & HasBlocks & {
   dest_rook: Pos,
 }
 
-export type PosActions<A extends HasAction> = {
-  byorig: PosMap<Array<A>>,
-  bydest: PosMap<Array<A>>,
-  byblocks: PosMap<Array<A>>
-  bycapture: PosMap<Array<A>>
+export type SanActions = Slide | PawnPush | PawnCapture | PawnPromote
+
+export type PosActions = {
+  byorig: PosMap<Array<SanActions>>,
+  bydest: PosMap<Array<SanActions>>,
+  byblocks: PosMap<Array<SanActions>>
+  bycapture: PosMap<Array<SanActions>>
 }
 
 
@@ -169,6 +171,12 @@ export const pawn_push: ColorMap<Dir> = {
   w: [0, 1],
   b: [0, -1]
 }
+
+export const pawn_capture: ColorMap<Array<Dir>> = {
+  w: [[1, 1], [-1, 1]],
+  b: [[1, -1], [-1, -1]]
+}
+
 
 export const knight: Array<Dir> = [[-2, 1], [2, 1], [-2, -1], [2, -1],
   [1, -2], [1, 2], [-1, -2], [-1, 2]]
@@ -233,6 +241,10 @@ export function pawnpush_rays(orig: Pos, color: Color): Array<Ray> {
   return projections.flatMap(projection => make_ray(dir, orig, projection) || [])
 }
 
+export function pawncapture_rays(orig: Pos, color: Color): Array<Ray> {
+  return pawn_capture[color].flatMap(dir => make_ray(dir, orig, 1) || [])
+}
+
 export function make_ray(dir: Dir, orig: Pos, projection: Projection): Ray | undefined {
 
   let next: Pos | undefined = orig
@@ -267,6 +279,10 @@ export function isColor(_: string): _ is Color {
   return colors.includes(_)
 }
 
+export function color_opposite(c: Color) {
+  return c === 'w' ? 'b' : 'w'
+}
+
 export function white_if(b: boolean) {
   return b ? 'w' : 'b'
 }
@@ -277,8 +293,9 @@ export function isRole(_: string): _ is Role {
 }
 
 export function uci_role(uci: string) {
-  if (isRole(uci)) {
-    return uci
+  let res = uci.toLowerCase()
+  if (isRole(res)) {
+    return res
   }
 }
 
@@ -294,6 +311,16 @@ export function uci_piece(uci: string) {
     }
   }
 }
+
+export function board_clone(board: Board) {
+  let res = board_make()
+
+  for (let [pos, piece] of board.pieces) {
+    board_drop(res, pos, piece)
+  }
+  return res
+}
+
 
 export function board_make(pieces: PosMap<PieceOrPawn> = new Map()) {
   return { pieces }
@@ -311,11 +338,10 @@ export function board_pos(board: Board, pos: Pos) {
   return board.pieces.get(pos)
 }
 
-export function situation_slides(situation: Situation) {
+export function situation_some(situation: Situation) {
   let { board, turn } = situation
 
-  let slide_actions = posactions<Slide>()
-  let pawn_pushes = posactions<PawnPush>()
+  let slide_actions = posactions()
 
   mapmap(board.pieces, (pos, piece) => {
     if (isPiece(piece)) {
@@ -356,10 +382,30 @@ export function situation_slides(situation: Situation) {
         let valid_king = false
 
         posactions_add(slide_actions, {
-          action: 'slide', 
+          action: 'pawnpush', 
           orig,
           dest,
           blocks,
+          valid_turn,
+          valid_king,
+          valid_ok
+        })
+      })
+
+
+      pawncapture_rays(pos, piece.color).map(ray => {
+        let { orig, dest } = ray
+        let capturePiece = board_pos(board, ray.dest)
+        let capture = capturePiece && ray.dest
+
+        let valid_turn = piece.color === turn
+        let valid_ok = !!capturePiece
+        let valid_king = false
+
+        posactions_add(slide_actions, {
+          action: 'pawncapture', 
+          orig,
+          dest,
           capture,
           valid_turn,
           valid_king,
@@ -372,11 +418,11 @@ export function situation_slides(situation: Situation) {
 }
 
 export function situation_all(situation: Situation) {
-  return situation_slides(situation)
+  return situation_some(situation)
 }
 
 export function situation_valids(situation: Situation) {
-  return posactions_filter(situation_slides(situation))
+  return posactions_filter(situation_some(situation))
 }
 
 export const situation_moves = situation_valids
@@ -395,15 +441,40 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
 
       let before = situation
       let piece = board_pos(situation.board, action.orig)!
-      let after = situation
+      let after = situation_after(situation, action)
 
-      return {
-        action,
-        before,
-        after,
-        piece
+      if (after) {
+        return {
+          action,
+          before,
+          after,
+          piece
+        }
       }
     }
+  }
+}
+
+export function situation_after(situation: Situation, action: SanActions) {
+  let { board, turn } = situation
+  let after = board_clone(board)
+
+  if ("capture" in action && action.capture) {
+    board_pickup(after, action.capture)
+  }
+
+  let p = board_pos(after, action.orig)
+  if (p) {
+    board_pickup(after, action.orig)
+    board_drop(after, action.dest, p)
+    return situation_make(after, color_opposite(turn))
+  }
+}
+
+export function situation_make(board: Board, turn: Color) {
+  return {
+    board,
+    turn
   }
 }
 
@@ -411,7 +482,7 @@ export function valid_action_filter(a: IsAction) {
   return a.valid_turn && a.valid_ok
 }
 
-export function posactions_filter<A extends IsAction>(posaction: PosActions<A>, filter: (_: IsAction) => boolean = valid_action_filter) {
+export function posactions_filter(posaction: PosActions, filter: (_: IsAction) => boolean = valid_action_filter) {
   maparray_filter(posaction.byorig, filter)
   maparray_filter(posaction.bydest, filter)
   maparray_filter(posaction.byblocks, filter)
@@ -433,17 +504,16 @@ export function mapfilter<K, V>(map: Map<K, V>, filter: (v: V) => boolean) {
   }
 }
 
-export function posactions_add<A extends HasAction>(posaction: PosActions<A>, has_action: A) {
-  if (isSlide(has_action)) {
+export function posactions_add(posaction: PosActions, has_action: SanActions) {
     maparray_push(posaction.byorig, has_action.orig, has_action)
     maparray_push(posaction.bydest, has_action.dest, has_action)
 
+  if ("blocks" in has_action) {
     has_action.blocks.forEach(block =>
       maparray_push(posaction.byblocks, block, has_action))
-
-    if (has_action.capture) {
-      maparray_push(posaction.bycapture, has_action.capture, has_action)
-    }
+  }
+  if ("capture" in has_action) {
+    maparray_push(posaction.bycapture, has_action.capture, has_action)
   }
 }
 
@@ -454,7 +524,7 @@ export function maparray_push<K, V>(_map: Map<K, Array<V>>, key: K, value: V) {
 }
 
 
-export function posactions<A extends HasAction>(): PosActions<A> {
+export function posactions(): PosActions {
   let byorig = new Map(),
     bydest = new Map(),
     byblocks = new Map(),
@@ -517,9 +587,54 @@ export function move_san(move: Move): string {
   throw 'not implemented'
 }
 
+export function piece_uci(p: PieceOrPawn): string {
+  return p.color === 'w' ? p.role.toUpperCase() : p.role
+}
+
+export function board_fen(board: Board): string {
+
+  let res = ''
+  let file: File = 1,
+    rank: Rank = 8
+
+  let spaces = 0
+  while (rank >= 1) {
+    let pos = pos_make(file as File, rank as Rank)
+
+    let p = board.pieces.get(pos)
+
+    if (!p) {
+      spaces++
+    } else {
+      if (spaces > 0) {
+        res += spaces
+        spaces = 0
+      }
+      res += piece_uci(p)
+    }
+    file++
+    if (file == 9) {
+      file = 1
+      rank--
+      if (spaces > 0) {
+        res += spaces
+        spaces = 0
+      }
+      if (rank < 1) {
+        break
+      }
+      res += '/'
+    }
+  }
+
+  return res
+}
 
 export function situation_fen(situation: Situation): Fen {
-  return '' + Math.random() 
+  let position = board_fen(situation.board),
+    turn = situation.turn
+
+  return [position, turn, 'KQkq - 0 1'].join(' ')
 }
 
 

@@ -4,23 +4,29 @@ import Esrar from '../format'
 import { simple, result10, more, advanced } from './_fixture'
 import { move_san } from '../types'
 
-test.only('simple', t => {
+test('simple', t => {
   let res = Esrar(simple)
   t.is(res.pgns.length, 1)
-  t.is(res.pgns[0].fens.size, 5)
-  t.log(res.errors)
+  t.is(res.pgns[0].fens.size, 4)
+  t.is(res.errors.length, 0)
+  t.log('errors', res.errors)
 })
 
-test('result 1-0', t => {
-  t.is(Esrar(result10).pgns.length, 1)
+test.only('result 1-0', t => {
+  let res = Esrar(result10)
+  t.is(res.pgns.length, 1)
+  t.is(res.errors.length, 0)
 })
 
 test('more pgns', t => {
-  t.is(Esrar(more).pgns.length, 5)
+  let res = Esrar(more)
+  t.is(res.pgns.length, 5)
+  t.is(res.errors.length, 0)
 })
 
-test.skip('frenchadvanced', t => {
-  let qpgn = Esrar(advanced).pgns[0].fens
+test('frenchadvanced', t => {
+  let res = Esrar(advanced)
+  let qpgn = res.pgns[0].fens
 
   let b2d4 = qpgn.get('2r1k2r/pp1bbppp/1qn1p2n/3pP3/3p1P2/P1P2N2/1PB3PP/RNBQ1RK1 w - - 0 1');
 
@@ -28,4 +34,5 @@ test.skip('frenchadvanced', t => {
 
   let move = b2d4![0].tsmove
   t.is(move && move_san(move), 'cxd4')
+  t.is(res.errors.length, 0)
 })

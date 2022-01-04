@@ -30,7 +30,6 @@ export default class StudyBuilder {
         _.maxPly = _.ply + maxDepth;
         if (situation && _.move.san) {
           let tsmove;
-
           try {
             tsmove = situation_sanorcastles(situation, _.move.san);
           } catch (e) {
