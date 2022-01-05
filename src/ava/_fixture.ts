@@ -27,6 +27,58 @@ export const promotion = `
 1. e4 d5 2. e5 d4 3. e6 d3 4. exf7+ Kd7 5. fxg8=Q Kc6 6. Qe6+ Kb5 7. b3 Ka5 8. Ba3 dxc2 9. Bb2 c1=N 10. Ba3 Nxb3 *
 `
 
+export const slav = `
+[Event "The Classical Slav: Chapter 1 Rare Lines 3.e3 and 4.Bd3"]
+[Site "https://lichess.org/study/gV9dujAi/KZkcePVm"]
+[Result "*"]
+[UTCDate "2021.06.22"]
+[UTCTime "09:22:09"]
+[Variant "Standard"]
+[ECO "D10"]
+[Opening "Slav Defense"]
+[Annotator "https://lichess.org/@/chesteditor"]
+
+1. d4 d5 2. c4 c6 3. e3 Nf6 4. Bd3 e5! { [%cal Gc4d5,Ge5e4,Gd3e2] } 5. Nc3 { C } (5. dxe5 { B } 5... dxc4 6. Be2! Qxd1+ 7. Bxd1 Ng4 8. f4 Bc5 9. Ke2 Bf5)  (5. Ne2 { A } 5... exd4! 6. Nxd4 c5! 7. Nf3 dxc4 8. Bxc4 Qxd1+ 9. Kxd1 Be7 10. Ke2 Nc6 $146 11. Nc3 O-O 12. Bd2 Bf5) 5... e4 6. Bc2 Bd6 7. f3 Be6 8. cxd5 cxd5 9. fxe4 Nxe4 10. Bxe4 dxe4 11. Nxe4 Qh4+ 12. Nf2 Qg5 13. g3 Bb4+ 14. Kf1 O-O 15. Ne2 f5 16. Kg2 Qd8 17. Nf4 Bf7 18. Rf1 Bd6 *
+
+
+[Event "The Classical Slav: Chapter 2 Rare Lines 3.Bf4"]
+[Site "https://lichess.org/study/gV9dujAi/7NLwi9fC"]
+[Result "*"]
+[UTCDate "2021.06.25"]
+[UTCTime "21:06:06"]
+[Variant "Standard"]
+[ECO "D10"]
+[Opening "Slav Defense"]
+[Annotator "https://lichess.org/@/chesteditor"]
+
+1. d4 d5 2. c4 c6 3. Bf4 dxc4 4. e3 { [%cal Ge2e4,Ge7e5] } 4... b5 5. a4 Nf6 6. Nc3 b4 { [%cal Gc3a2,Gc3b1] } 7. Nb1 { B } (7. Na2 { A } 7... Qd5!? $146 8. Nf3 a5 9. Be2 Nbd7 10. O-O Ba6 11. Nd2 g6 12. Bf3 Qe6 13. Re1 Bg7 14. e4 O-O { [%csl Ge4,Gd4,Ga2] }) 7... Ba6 8. Qc1 c3! 9. bxc3 { [%cal Gf1a6] } 9... Bxf1 10. Kxf1 e6 11. Nf3 Nbd7 12. Ke2 Qa5 13. c4 Qa6 14. Qc2 c5 15. Rc1 Rc8 16. Ke1 Be7 *
+
+
+[Event "The Classical Slav: Chapter 3 - Rare Lines 4.Bf4 and 4.Bg5"]
+[Site "https://lichess.org/study/gV9dujAi/3Z90rPbI"]
+[Result "*"]
+[UTCDate "2021.07.16"]
+[UTCTime "11:24:28"]
+[Variant "Standard"]
+[ECO "D10"]
+[Opening "Slav Defense"]
+[Annotator "https://lichess.org/@/chesteditor"]
+
+1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. Bg5 { B } (4. Bf4 { A } 4... dxc4 5. a4 Nd5!? 6. Bg3 Nxc3 7. bxc3 Qa5!? $146 8. Qd2 Nd7 9. e4 Nb6 10. Nf3 g6 11. Be2 { [%csl Gf3][%cal Gf3e5,Gc8e6,Gf1e2,Gf7f6,Ge5f3,Gf8h6,Gd2c2,Gf6f5] } 11... Bg4 12. O-O Bg7) 4... dxc4 5. a4 { B3 } (5. e3 { B1 } 5... b5 6. a4 b4 7. Nb1 (7. Na2 Ne4! 8. Bh4 Qa5 9. Nf3 b3+! $146 10. Nc3 e5 11. Bxc4 Nxc3 12. bxc3 Qxc3+ 13. Nd2 b2 14. Rb1 Bb4) 7... Ba6 8. Bxf6 exf6 9. Qc1 c3 10. bxc3 Bxf1 11. Kxf1 c5! 12. cxb4 cxb4 $146 13. Nd2 Nd7)  (5. e4 { B2 } 5... b5 6. e5 Nd5 { [%cal Gg1f3,Gc8f5] } 7. a4 h6 8. Bd2 b4!? $146 9. Ne4 c3 10. bxc3 Bf5 11. c4 Bxe4 12. cxd5 Bxd5 13. Bxb4 Nd7) 5... Qa5 6. Bd2 { B31 } (6. Nf3 { B32 } 6... Nbd7 7. Bd2 e5 8. e3 Bb4 9. Bxc4 O-O 10. O-O e4 11. Ne1) 6... e5 { [%cal Gg1f3,Ge5d4,Gf3d4] } 7. dxe5 Qxe5 8. Nf3 Qc5 9. e3 Na6 $146 10. Be2 Nb4 11. O-O Bg4 12. Nd4 Bxe2 13. Ncxe2 a5 *
+
+
+[Event "The Classical Slav: Chapter 4 - Exchange Variation Minor Lines"]
+[Site "https://lichess.org/study/gV9dujAi/0zgvYEh3"]
+[Result "*"]
+[UTCDate "2021.07.29"]
+[UTCTime "06:29:48"]
+[Variant "Standard"]
+[ECO "D10"]
+[Opening "Slav Defense: Exchange Variation"]
+[Annotator "https://lichess.org/@/chesteditor"]
+
+1. d4 d5 2. c4 c6 3. cxd5 cxd5 4. Bf4 { A } (4. Nc3 { B } 4... Nf6 5. Nf3 { B2 } (5. Bg5 Ne4 6. Bf4 { B11 } (6. Nxe4 { B12 } 6... dxe4 { [%cal Gd1d2,Gd8d5,Ga2a3,Gb8c6,Ga1d1,Gc6a5] } 7. a3 h6 $146 8. Bh4 Qb6 9. Qc2 Nc6 10. e3 e5 11. Rd1 Qa5+ 12. Rd2 Be6) 6... e5!? $146 7. Bxe5 Qa5 8. Qb3 Bb4 9. Rc1 Nc6 10. Nf3 O-O 11. e3 Nxe5 12. Nxe5 Be6 13. Nd3 Bxc3+ 14. bxc3 Rfc8 15. Nb4 Qd8! $44) 5... Nc6 6. Bf4 { B22 } (6. Ne5 { B21 } 6... e6 { [%cal Gd1a4,Gc8d7,Ge5d7,Gf6d7] } 7. Nxc6 bxc6 8. g3 c5 9. Bg2 Be7 10. O-O O-O 11. dxc5 Bxc5 { [%cal Ge2e4,Gc8a6,Gf1e1,Gd8b6,Gc1e3,Gd5d4,Gc3a4,Gd4e3,Ga4b6,Ge3f2,Gg1h1,Gf2e1,Gd1e1,Ga7b6] } 12. Na4 Bd6 13. Be3 Qe7 14. Rc1 Rb8 $146 15. b3 Rd8 16. Bc5 Ba6 17. Bxd6 Qxd6 18. Nc5 Bb5) 6... Bf5 7. Rc1 e6 8. Qb3 Bd6 9. Qxb7 O-O 10. Qxc6 Bxf4 11. e3 Bd6 12. a3 Rb8) 4... Nc6 5. e3 Nf6 6. Bd3 Bg4 7. f3 { A3 } (7. Qb3 { A2 } 7... Na5! { [%cal Gb3c2,Ga8c8,Gb1c3,Ge7e6,Gg1e2,Gg4h5,Ge1g1,Gf8e7] } 8. Qa4+ Bd7 9. Qc2 Nc6 10. a3 Qa5+ 11. Qd2 Qxd2+ 12. Nxd2 Nh5 13. Be5 f6 14. Bg3 e5 15. Ne2 Bd6 16. Rc1 Kf7)  (7. Ne2 { A1 } 7... e6 8. Nbc3 Bd6! 9. f3 Bh5 10. g4 Bg6 11. h4 O-O! 12. h5 Bxd3 13. Qxd3 Bxf4 { [%cal Ge2f4,Gf6e8,Ge1b1,Ge8d6,Gb2b3] } 14. exf4 Rc8 15. h6 g6 16. Kf2 Ne8! 17. Rac1 Nd6 18. b3 Qa5 $146 { [%cal Gc8c7,Gf8c8] }) 7... Bh5! 8. Nc3 e6 9. Nge2 Be7 10. Kf2 Bg6 11. g4 Nd7 $146 12. Bg3 Bxd3 13. Qxd3 h5 *
+`
 
 export const result10 = `
 [Event "4...Bc5"]

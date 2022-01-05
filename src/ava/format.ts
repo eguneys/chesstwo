@@ -1,8 +1,15 @@
 import test from 'ava';
 
 import Esrar from '../format'
-import { enpassant, promotion, simple, result10, more, advanced } from './_fixture'
+import { slav, enpassant, promotion, simple, result10, more, advanced } from './_fixture'
 import { move_san } from '../types'
+
+test('slav', t => {
+  let res = Esrar(slav)
+
+  t.is(res.errors.length, 0)
+  t.log('errors', res.errors)
+})
 
 test('enpassant', t => {
   let res = Esrar(enpassant)
