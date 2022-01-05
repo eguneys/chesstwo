@@ -33,7 +33,7 @@ export default class StudyBuilder {
           try {
             tsmove = situation_sanorcastles(situation, _.move.san);
           } catch (e) {
-            console.warn('throws at ', situation_fen(situation), _.move.san);
+            console.warn('throws at ', situation_fen(situation), _.move.san, e.message);
           }
           if (tsmove) {
             let after = tsmove.after;

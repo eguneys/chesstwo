@@ -100,17 +100,18 @@ export type PawnPromote = IsAction & HasBlocks & {
 
 export type Castle = IsAction & HasBlocks & {
   action: 'castle'
+  castles: Castles,
   orig_rook: Pos,
   dest_rook: Pos,
 }
 
-export type SanActions = Slide | PawnPush | PawnCapture | PawnPromote
+export type AllActions = Slide | PawnPush | PawnCapture | PawnPromote | Castle
 
 export type PosActions = {
-  byorig: PosMap<Array<SanActions>>,
-  bydest: PosMap<Array<SanActions>>,
-  byblocks: PosMap<Array<SanActions>>
-  bycapture: PosMap<Array<SanActions>>
+  byorig: PosMap<Array<AllActions>>,
+  bydest: PosMap<Array<AllActions>>,
+  byblocks: PosMap<Array<AllActions>>
+  bycapture: PosMap<Array<AllActions>>
 }
 
 
@@ -126,36 +127,34 @@ export type San = {
   mate?: boolean
 }
 
-export type Castles = {
-  castles: string,
+export type ShortCastles = 'O-O'
+export type LongCastles = 'O-O-O'
+export type Castles = ShortCastles | LongCastles
+
+export type CastlesMap<A> = Record<Castles, A>
+
+export type CastlesInfo = {
+  castles: Castles,
   king: File,
   rook: File,
-  trip: Dir 
+  trip: Dir
 }
 
 export type SanOrCastles = San | Castles
 
 export type Move = {
-  action: HasAction,
+  action: AllActions,
   piece: PieceOrPawn,
   before: Situation,
   after: Situation
 }
 
-export function isSlide(_: HasAction): _ is Slide {
-  return _.action === 'slide'
-}
-
-export function isCastles(_: SanOrCastles): _ is Castles {
-  return !!(_ as Castles).castles
-}
-
 export function isSan(_: SanOrCastles): _ is San {
-  return !!(_ as San).san
+  return typeof _ === 'object'
 }
 
-export const left: Dir = [0, -1]
-export const right: Dir = [0, 1]
+export const left: Dir = [-1, 0]
+export const right: Dir = [1, 0]
 
 export const pawn_push2_ranks: ColorMap<Rank> = {
   w: 2,
@@ -243,6 +242,12 @@ export function pawnpush_rays(orig: Pos, color: Color): Array<Ray> {
 
 export function pawncapture_rays(orig: Pos, color: Color): Array<Ray> {
   return pawn_capture[color].flatMap(dir => make_ray(dir, orig, 1) || [])
+}
+
+
+export function castle_rook_rays(orig: Pos, castles: CastlesInfo): Ray | undefined {
+  return make_ray(castles.trip, orig, 
+    Math.abs(pos_file(orig) - castles.rook) as Projection)
 }
 
 export function make_ray(dir: Dir, orig: Pos, projection: Projection): Ray | undefined {
@@ -338,12 +343,62 @@ export function board_pos(board: Board, pos: Pos) {
   return board.pieces.get(pos)
 }
 
+export function board_kings(board: Board) {
+
+  let res: ColorMap<Pos | undefined> = {w: undefined, b: undefined}
+
+  for (let [pos, piece] of board.pieces) {
+    if (piece.role === 'k') {
+      res[piece.color] = pos
+    }
+  }
+  return res 
+}
+
 export function situation_some(situation: Situation) {
   let { board, turn } = situation
 
   let slide_actions = posactions()
 
+  let kings = board_kings(board)
+
   mapmap(board.pieces, (pos, piece) => {
+
+    if (piece.role === 'r') {
+
+      castlesInfos.map(castlesInfo => {
+        let ray = castle_rook_rays(pos, castlesInfo)
+        if (!ray) { return }
+        let blocks = ray.between.flatMap(_ =>
+          (board_pos(board, _) && _) || [])
+        let capturePiece = board_pos(board, ray.dest)
+        let kingPos = kings[piece.color]
+
+        let valid_turn = piece.color === turn
+        let valid_ok = blocks.length === 0 && !capturePiece
+        let valid_king = false
+ 
+        if (kingPos) {
+          let kingTo = pos_make(castlesInfo.king, pos_rank(kingPos))
+          let rookTo = ray.dest
+          posactions_add(slide_actions, {
+            action: 'castle',
+            castles: castlesInfo.castles,
+            orig: kingPos,
+            dest: kingTo,
+            blocks,
+            valid_turn,
+            valid_ok,
+            valid_king,
+            orig_rook: pos,
+            dest_rook: rookTo
+          })
+        }
+      })
+    }
+
+
+
     if (isPiece(piece)) {
       rays[piece.role].get(pos)!.map(ray => {
         let { orig, dest } = ray
@@ -417,9 +472,6 @@ export function situation_some(situation: Situation) {
   return slide_actions
 }
 
-export function situation_all(situation: Situation) {
-  return situation_some(situation)
-}
 
 export function situation_valids(situation: Situation) {
   return posactions_filter(situation_some(situation))
@@ -428,13 +480,12 @@ export function situation_valids(situation: Situation) {
 export const situation_moves = situation_valids
 
 export function situation_sanorcastles(situation: Situation, sanorcastles: SanOrCastles): Move | undefined {
-
-  let valids = situation_all(situation)
-
   if (isSan(sanorcastles)) {
-
+    let valids = situation_valids(situation)
     let action = valids.bydest.get(sanorcastles.to)?.filter(slide => 
-      board_pos(situation.board, slide.orig)!.role == sanorcastles.role
+      board_pos(situation.board, slide.orig)!.role == sanorcastles.role &&
+      (!sanorcastles.file || pos_file(slide.orig) === sanorcastles.file) &&
+      (!sanorcastles.rank || pos_rank(slide.orig) === sanorcastles.rank) 
     )?.[0]
 
     if (action) {
@@ -452,12 +503,47 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
         }
       }
     }
+  } else {
+    let valids = situation_valids(situation)
+
+    for (let [pos, actions] of valids.byorig) {
+      let action = actions.find(_ => 
+        _.action === 'castle' &&
+        _.castles === sanorcastles
+      )
+      if (action) {
+        let before = situation
+        let piece = board_pos(situation.board, action.orig)!;
+        let after = situation_after(situation, action)
+
+        if (after) {
+          return {
+            action,
+            before,
+            after,
+            piece
+          }
+        }
+      }
+    }
+
   }
 }
 
-export function situation_after(situation: Situation, action: SanActions) {
+export function situation_after(situation: Situation, action: AllActions) {
   let { board, turn } = situation
   let after = board_clone(board)
+
+  if (action.action === 'castle') {
+    let king = board_pos(after, action.orig)!
+    let rook = board_pos(after, action.orig_rook)!
+
+    board_pickup(after, action.orig)
+    board_pickup(after, action.orig_rook)
+    board_drop(after, action.dest, king)
+    board_drop(after, action.dest_rook, rook)
+    return situation_make(after, color_opposite(turn))
+  }
 
   if ("capture" in action && action.capture) {
     board_pickup(after, action.capture)
@@ -504,7 +590,7 @@ export function mapfilter<K, V>(map: Map<K, V>, filter: (v: V) => boolean) {
   }
 }
 
-export function posactions_add(posaction: PosActions, has_action: SanActions) {
+export function posactions_add(posaction: PosActions, has_action: AllActions) {
     maparray_push(posaction.byorig, has_action.orig, has_action)
     maparray_push(posaction.bydest, has_action.dest, has_action)
 
@@ -584,11 +670,36 @@ export function pos_uci(pos: Pos) {
 }
 
 export function move_san(move: Move): string {
-  throw 'not implemented'
+  let { action, piece } = move
+
+  if ("castles" in action) {
+    return action.castles
+  }
+
+  let ambigiousFile = false,
+    ambigiousRank = false,
+    pawnCapture = action.action === 'pawncapture',
+    pawnCaptureOrAmbigiousFile = pawnCapture || ambigiousFile;
+
+  let pieceS = piece_san(piece),
+    fileS = pawnCaptureOrAmbigiousFile?file_uci(pos_file(action.orig)):'',
+    rankS = ambigiousRank?rank_uci(pos_rank(action.orig)):'',
+    captureS = "capture" in action?'x':'',
+    toS = pos_uci(action.dest),
+    promotionS = action.action==='pawnpromote'?`=${action.to}`:'',
+    checkS = '',
+    mateS = '';
+
+  return [pieceS, fileS, rankS, captureS, toS, promotionS, checkS, mateS].join('');
 }
 
 export function piece_uci(p: PieceOrPawn): string {
   return p.color === 'w' ? p.role.toUpperCase() : p.role
+}
+
+export function piece_san(p: PieceOrPawn): string {
+  if (isPiece(p)) { return piece_uci(p) }
+  return ''
 }
 
 export function board_fen(board: Board): string {
@@ -679,25 +790,30 @@ export const initial_situation = fen_situation(initial)!;
 export const shortCastleNotations = ["o-o", "O-O", "0-0"]
 export const longCastleNotations = ["o-o-o", "O-O-O", "0-0-0"]
 
-export const shortCastles = {
-  castles: 'O-O',
+export const shortCastles: ShortCastles = "O-O"
+export const longCastles: LongCastles = "O-O-O"
+
+export const shortCastlesInfo = {
+  castles: shortCastles,
   king: uci_file('g')!,
   rook: uci_file('f')!,
-  trip: right
-}
-
-export const longCastles = {
-  castles: 'O-O-O',
-  king: uci_file('c')!,
-  rook: uci_file('d')!,
   trip: left 
 }
 
+export const longCastlesInfo = {
+  castles: longCastles,
+  king: uci_file('c')!,
+  rook: uci_file('d')!,
+  trip: right 
+}
+
+export const castlesInfos: Array<CastlesInfo> = [shortCastlesInfo, longCastlesInfo]
+
 export function sanOrCastles(sanOrC: string): SanOrCastles | undefined {
   if (shortCastleNotations.includes(sanOrC)) {
-    return shortCastles;
+    return "O-O";
   } else if (longCastleNotations.includes(sanOrC)) {
-    return longCastles;
+    return "O-O-O";
   }
   return san2(sanOrC) || san(sanOrC);
 }
