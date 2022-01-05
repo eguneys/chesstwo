@@ -9,8 +9,7 @@ export const promotion = `
 [Opening "Scandinavian Defense"]
 [Annotator "https://lichess.org/@/heroku"]
 
-1. e4 d5 2. e5 d4 3. e6 d3 4. exf7+ Kd7 5. fxg8=Q Kc6 6. Qe6+ *
-
+1. e4 d5 2. e5 d4 3. e6 d3 4. exf7+ Kd7 5. fxg8=Q Kc6 6. Qe6+ Kb5 7. b3 Ka5 8. Ba3 dxc2 9. Bb2 c1=N 10. Ba3 Nxb3 *
 `
 
 

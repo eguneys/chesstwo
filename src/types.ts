@@ -519,7 +519,8 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
     let action = valids.bydest.get(sanorcastles.to)?.filter(slide => 
       board_pos(situation.board, slide.orig)!.role == sanorcastles.role &&
       (!sanorcastles.file || pos_file(slide.orig) === sanorcastles.file) &&
-      (!sanorcastles.rank || pos_rank(slide.orig) === sanorcastles.rank) 
+      (!sanorcastles.rank || pos_rank(slide.orig) === sanorcastles.rank) &&
+      (!sanorcastles.promotion || ("promote" in slide && slide.promote === sanorcastles.promotion))
     )?.[0]
 
     if (action) {
@@ -725,7 +726,7 @@ export function move_san(move: Move): string {
     rankS = ambigiousRank?rank_uci(pos_rank(action.orig)):'',
     captureS = "capture" in action?'x':'',
     toS = pos_uci(action.dest),
-    promotionS = "promote" in action && action.promote ?`=${piece_uci(piece_make(action.promote, piece.color))}`:'',
+    promotionS = "promote" in action && action.promote ?`=${action.promote.toUpperCase()}`:'',
     checkS = '',
     mateS = '';
 
@@ -868,6 +869,7 @@ export function san2(san2: string): San | undefined {
     return;
   }
   let [roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS] = res;
+  promotionS = promotionS.replace('=', '');
   return makeSan(san2, roleS, fileS, rankS, captureS, toS, promotionS, checkS, mateS); 
 }
 

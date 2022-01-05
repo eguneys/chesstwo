@@ -14,6 +14,18 @@ test.only('promotion', t => {
 
   let move = fxg8![0].tsmove
   t.is(move && move_san(move), 'fxg8=Q') 
+
+
+  let c1N = qpgn.get('rnbq1b1r/ppp1p1pp/4Q3/k7/8/1P6/PBpP1PPP/RN1QKBNR b KQkq - 0 1')
+
+  t.truthy(c1N)
+
+  move = c1N![0].tsmove
+  t.is(move && move_san(move), 'c1=N') 
+
+
+
+
   t.is(res.errors.length, 0)
   t.log('errors', res.errors)
 })
