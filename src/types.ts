@@ -54,7 +54,7 @@ export type Situation = {
   turn: Color
 }
 
-export type ActionType = 'slide' | 'pawnpush' | 'pawncapture' | 'pawnpromote' | 'castle'
+export type ActionType = 'slide' | 'pawnpush' | 'pawncapture' | 'enpassant' | 'castle'
 
 export type HasAction = {
   action: ActionType
@@ -97,6 +97,10 @@ export type PawnCapture = IsAction & HasCapture & HasPromote & {
   action: 'pawncapture'
 }
 
+export type Enpassant = IsAction & HasCapture & {
+  action: 'enpassant'
+}
+
 export type Castle = IsAction & HasBlocks & {
   action: 'castle'
   castles: Castles,
@@ -104,7 +108,7 @@ export type Castle = IsAction & HasBlocks & {
   dest_rook: Pos,
 }
 
-export type AllActions = Slide | PawnPush | PawnCapture | Castle
+export type AllActions = Slide | PawnPush | PawnCapture | Enpassant | Castle
 
 export type PosActions = {
   byorig: PosMap<Array<AllActions>>,
@@ -163,6 +167,11 @@ export const pawn_push2_ranks: ColorMap<Rank> = {
 export const pawn_promote_ranks: ColorMap<Rank> = {
   w: 7,
   b: 2
+}
+
+export const enpassant_ranks: ColorMap<Rank> = {
+  w: 5,
+  b: 4
 }
 
 export const pawn_push: ColorMap<Dir> = {
@@ -423,6 +432,33 @@ export function situation_some(situation: Situation) {
         })
       })
     } else {
+
+
+      if (enpassant_ranks[piece.color] === pos_rank(pos)) {
+
+        [left, right].map(dir => {
+          let orig = pos
+          let capture = pos_dir(orig, dir)!
+          let capturePawn = board_pos(board, capture)
+          let dest = pos_dir(capture, pawn_push[piece.color])!
+
+          let valid_turn = piece.color === turn
+          let valid_ok = !!capturePawn
+          let valid_king = false
+
+          posactions_add(slide_actions, {
+            action: 'enpassant', 
+            orig,
+            dest,
+            capture,
+            valid_turn,
+            valid_king,
+            valid_ok
+          })
+
+        })
+      }
+
 
 
       pawnpush_rays(pos, piece.color).map(ray => {

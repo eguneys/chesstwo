@@ -1,10 +1,18 @@
 import test from 'ava';
 
 import Esrar from '../format'
-import { promotion, simple, result10, more, advanced } from './_fixture'
+import { enpassant, promotion, simple, result10, more, advanced } from './_fixture'
 import { move_san } from '../types'
 
-test.only('promotion', t => {
+test('enpassant', t => {
+  let res = Esrar(enpassant)
+
+  t.is(res.errors.length, 0)
+  t.log('errors', res.errors)
+})
+
+
+test('promotion', t => {
   let res = Esrar(promotion)
   let qpgn = res.pgns[0].fens
 

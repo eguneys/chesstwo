@@ -1,3 +1,18 @@
+export const enpassant = `
+[Event "Queen's Gambit: En passant"]
+[Site "https://lichess.org/study/UDGsyFSt/gQ1imQmH"]
+[Result "*"]
+[UTCDate "2022.01.05"]
+[UTCTime "21:58:40"]
+[Variant "Standard"]
+[ECO "A40"]
+[Opening "Queen's Pawn Game"]
+[Annotator "https://lichess.org/@/heroku"]
+
+1. d4 a6 2. d5 c5 3. dxc6 bxc6 *
+`
+
+
 export const promotion = `
 [Event "Queen's Gambit: Bölüm 2"]
 [Site "https://lichess.org/study/UDGsyFSt/Ol87HDDW"]
