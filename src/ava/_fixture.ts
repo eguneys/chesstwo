@@ -1,3 +1,19 @@
+export const promotion = `
+[Event "Queen's Gambit: Bölüm 2"]
+[Site "https://lichess.org/study/UDGsyFSt/Ol87HDDW"]
+[Result "*"]
+[UTCDate "2022.01.05"]
+[UTCTime "20:56:56"]
+[Variant "Standard"]
+[ECO "B01"]
+[Opening "Scandinavian Defense"]
+[Annotator "https://lichess.org/@/heroku"]
+
+1. e4 d5 2. e5 d4 3. e6 d3 4. exf7+ Kd7 5. fxg8=Q Kc6 6. Qe6+ *
+
+`
+
+
 export const result10 = `
 [Event "4...Bc5"]
 [Site "https://lichess.org/study/UwttpO9c/suM7y1EZ"]

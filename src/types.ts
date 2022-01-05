@@ -78,6 +78,10 @@ export type HasCapture = {
   capture?: Pos
 }
 
+export type HasPromote = {
+  promote?: PromotableRole
+}
+
 export type IsAction = HasAction & HasOrigDest & HasValidTurn & {
 
 }
@@ -86,16 +90,11 @@ export type Slide = IsAction & HasBlocks & HasCapture & {
   action: 'slide'
 }
 
-export type PawnPush = IsAction & HasBlocks & {
+export type PawnPush = IsAction & HasBlocks & HasPromote & {
   action: 'pawnpush'
 }
-export type PawnCapture = IsAction & HasCapture & {
+export type PawnCapture = IsAction & HasCapture & HasPromote & {
   action: 'pawncapture'
-}
-
-export type PawnPromote = IsAction & HasBlocks & {
-  action: 'pawnpromote'
-  to: PromotableRole
 }
 
 export type Castle = IsAction & HasBlocks & {
@@ -105,7 +104,7 @@ export type Castle = IsAction & HasBlocks & {
   dest_rook: Pos,
 }
 
-export type AllActions = Slide | PawnPush | PawnCapture | PawnPromote | Castle
+export type AllActions = Slide | PawnPush | PawnCapture | Castle
 
 export type PosActions = {
   byorig: PosMap<Array<AllActions>>,
@@ -162,8 +161,8 @@ export const pawn_push2_ranks: ColorMap<Rank> = {
 }
 
 export const pawn_promote_ranks: ColorMap<Rank> = {
-  w: 8,
-  b: 1
+  w: 7,
+  b: 2
 }
 
 export const pawn_push: ColorMap<Dir> = {
@@ -244,7 +243,6 @@ export function pawncapture_rays(orig: Pos, color: Color): Array<Ray> {
   return pawn_capture[color].flatMap(dir => make_ray(dir, orig, 1) || [])
 }
 
-
 export function castle_rook_rays(orig: Pos, castles: CastlesInfo): Ray | undefined {
   return make_ray(castles.trip, orig, 
     Math.abs(pos_file(orig) - castles.rook) as Projection)
@@ -293,6 +291,7 @@ export function white_if(b: boolean) {
 }
 
 export const roles = ['q', 'k', 'r', 'b', 'n', 'p']
+export const promotables: Array<PromotableRole> = ['q', 'r', 'b', 'n']
 export function isRole(_: string): _ is Role {
   return roles.includes(_)
 }
@@ -424,8 +423,11 @@ export function situation_some(situation: Situation) {
         })
       })
     } else {
+
+
       pawnpush_rays(pos, piece.color).map(ray => {
         let { orig, dest } = ray
+
         let blocks = ray.between.flatMap(_ =>
           (board_pos(board, _) && _) || [])
         let capturePiece = board_pos(board, ray.dest)
@@ -436,17 +438,32 @@ export function situation_some(situation: Situation) {
           !capturePiece
         let valid_king = false
 
-        posactions_add(slide_actions, {
-          action: 'pawnpush', 
-          orig,
-          dest,
-          blocks,
-          valid_turn,
-          valid_king,
-          valid_ok
-        })
-      })
 
+        if (pos_rank(orig) === pawn_promote_ranks[piece.color]) {
+          promotables.map(promote => {
+            posactions_add(slide_actions, {
+              action: 'pawnpush', 
+              orig,
+              dest,
+              blocks,
+              promote,
+              valid_turn,
+              valid_king,
+              valid_ok
+            })
+          })
+        } else {
+          posactions_add(slide_actions, {
+            action: 'pawnpush', 
+            orig,
+            dest,
+            blocks,
+            valid_turn,
+            valid_king,
+            valid_ok
+          })
+        }
+      })
 
       pawncapture_rays(pos, piece.color).map(ray => {
         let { orig, dest } = ray
@@ -457,17 +474,34 @@ export function situation_some(situation: Situation) {
         let valid_ok = !!capturePiece
         let valid_king = false
 
-        posactions_add(slide_actions, {
-          action: 'pawncapture', 
-          orig,
-          dest,
-          capture,
-          valid_turn,
-          valid_king,
-          valid_ok
-        })
+
+        if (pos_rank(orig) === pawn_promote_ranks[piece.color]) {
+          promotables.map(promote => {
+            posactions_add(slide_actions, {
+              action: 'pawncapture', 
+              orig,
+              dest,
+              capture,
+              promote,
+              valid_turn,
+              valid_king,
+              valid_ok
+            })
+          })
+        } else {
+
+          posactions_add(slide_actions, {
+            action: 'pawncapture', 
+            orig,
+            dest,
+            capture,
+            valid_turn,
+            valid_king,
+            valid_ok
+          })
+        }
       })
-    } 
+    }
   })
   return slide_actions
 }
@@ -552,7 +586,12 @@ export function situation_after(situation: Situation, action: AllActions) {
   let p = board_pos(after, action.orig)
   if (p) {
     board_pickup(after, action.orig)
-    board_drop(after, action.dest, p)
+
+    if ("promote" in action && action.promote) {
+      board_drop(after, action.dest, piece_make(action.promote, p.color))
+    } else {
+      board_drop(after, action.dest, p)
+    }
     return situation_make(after, color_opposite(turn))
   }
 }
@@ -686,11 +725,15 @@ export function move_san(move: Move): string {
     rankS = ambigiousRank?rank_uci(pos_rank(action.orig)):'',
     captureS = "capture" in action?'x':'',
     toS = pos_uci(action.dest),
-    promotionS = action.action==='pawnpromote'?`=${action.to}`:'',
+    promotionS = "promote" in action && action.promote ?`=${piece_uci(piece_make(action.promote, piece.color))}`:'',
     checkS = '',
     mateS = '';
 
   return [pieceS, fileS, rankS, captureS, toS, promotionS, checkS, mateS].join('');
+}
+
+export function piece_make(role: Role, color: Color) {
+  return { role, color }
 }
 
 export function piece_uci(p: PieceOrPawn): string {

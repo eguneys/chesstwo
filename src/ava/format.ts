@@ -1,8 +1,22 @@
 import test from 'ava';
 
 import Esrar from '../format'
-import { simple, result10, more, advanced } from './_fixture'
+import { promotion, simple, result10, more, advanced } from './_fixture'
 import { move_san } from '../types'
+
+test.only('promotion', t => {
+  let res = Esrar(promotion)
+  let qpgn = res.pgns[0].fens
+
+  let fxg8 = qpgn.get('rnbq1bnr/pppkpPpp/8/8/8/3p4/PPPP1PPP/RNBQKBNR w KQkq - 0 1');
+
+  t.truthy(fxg8)
+
+  let move = fxg8![0].tsmove
+  t.is(move && move_san(move), 'fxg8=Q') 
+  t.is(res.errors.length, 0)
+  t.log('errors', res.errors)
+})
 
 test('simple', t => {
   let res = Esrar(simple)
