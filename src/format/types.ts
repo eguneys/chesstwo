@@ -6,7 +6,7 @@ export type Ply = number
 export type QPGN = {
   tags: TagMap,
   fens: FenMap,
-  variations: FRoot<QMove, Situation | undefined>,
+  variations: FRoot<QMove, Situation>,
   branchPlies: Array<Ply>
 }
 

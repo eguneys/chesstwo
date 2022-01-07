@@ -31,12 +31,12 @@ export default class StudyBuilder {
     let fenMap = new Map();
     if (this._root) {
 
-      let _root: FRoot<erm.QMove, Situation | undefined> = root(initial_situation)
+      let _root: FRoot<erm.QMove, Situation> = root(initial_situation)
       add_node(_root, this._root)
 
       climb_with_root(_root, (situation, _, maxDepth) => {
         _.maxPly = _.ply + maxDepth;
-        if (situation && _.move.san) {
+        if (_.move.san) {
           let tsmove;
           try {
             tsmove = situation_sanorcastles(situation, _.move.san);
@@ -58,6 +58,7 @@ export default class StudyBuilder {
             this.errors.push([_.ply, _.move])
           }
         }
+        return situation
       });
 
       let branchPlies = [];

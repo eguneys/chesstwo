@@ -80,6 +80,21 @@ export function climb_with_root<A, B>(root: FRoot<A, B>, fn: (root: B, child: A,
   root.children.forEach(_ => helper(root.data, _))
 }
 
+export function map<A, B, C, D>(_root: FRoot<A, B>, fna:(a: A) => C, fnb:(b: B) => D): FRoot<C, D> {
+
+  function helper(child: FNode<A>) {
+    let _node = node(child.id, fna(child.data))
+    add_nodes(_node, child.children.map(_ => helper(_)))
+    return _node
+  }
+
+  let new_root: FRoot<C, D> = root(fnb(_root.data))
+
+  add_nodes(new_root, _root.children.map(_ => helper(_)))
+
+  return new_root 
+}
+
 export function max_depth<A>(root: FNode<A>): number {
   if (root.children[0]) {
     return 1 + max_depth(root.children[0])
