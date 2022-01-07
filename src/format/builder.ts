@@ -1,19 +1,24 @@
 import * as erm from './types';
-import { pClimbWithRoot, pAdd, pnode, PNode } from './pnode';
-import { dis, em } from 'esra';
-import { initial, fen_situation, situation_fen, situation_sanorcastles, SanOrCastles, sanOrCastles } from '../types';
+import { dis } from 'esra';
+import { FRoot, 
+  FNode,
+  climb_with_root,
+  add_node,
+  root,
+  node as fnode } from './fnode'
+import { Situation, initial_situation, fen_situation, situation_fen, situation_sanorcastles, SanOrCastles, sanOrCastles } from '../types';
 
-export type CurrentAndParent = [PNode<erm.QMove> | undefined, PNode<erm.QMove>]
+export type CurrentAndParent = [FNode<erm.QMove> | undefined, FNode<erm.QMove>]
 
 export default class StudyBuilder {
 
   errors: Array<[erm.Ply, erm.SanMetaWithExtra]>
   pgns: Array<erm.QPGN>;
   _tags: erm.TagMap;
-  _root?: PNode<erm.QMove>;
+  _root?: FNode<erm.QMove>;
   __branchs: Array<CurrentAndParent>;
-  __currentParent?: PNode<erm.QMove>;
-  __current?: PNode<erm.QMove>;
+  __currentParent?: FNode<erm.QMove>;
+  __current?: FNode<erm.QMove>;
 
   constructor() {
     this.errors = []
@@ -26,7 +31,10 @@ export default class StudyBuilder {
     let fenMap = new Map();
     if (this._root) {
 
-      pClimbWithRoot(fen_situation(initial), this._root, (situation, _, maxDepth) => {
+      let _root: FRoot<erm.QMove, Situation | undefined> = root(initial_situation)
+      add_node(_root, this._root)
+
+      climb_with_root(_root, (situation, _, maxDepth) => {
         _.maxPly = _.ply + maxDepth;
         if (situation && _.move.san) {
           let tsmove;
@@ -62,7 +70,7 @@ export default class StudyBuilder {
       let pgn = {
         tags: this._tags,
         fens: fenMap,
-        variations: this._root,
+        variations: _root,
         branchPlies
       };
 
@@ -75,9 +83,9 @@ export default class StudyBuilder {
     this.__current = undefined;
   }
 
-  addCurrentNode(node: PNode<erm.QMove>) {
+  addCurrentNode(node: FNode<erm.QMove>) {
     if (this.__current) {
-      pAdd(this.__current, node);
+      add_node(this.__current, node);
     }
 
     this.__currentParent = this.__current;
@@ -110,7 +118,7 @@ export default class StudyBuilder {
     return {
       move(ply: number, move: erm.SanMetaWithExtra) {
 
-        let node = pnode({
+        let node = fnode('', {
           ply,
           move
         });
@@ -118,11 +126,11 @@ export default class StudyBuilder {
         self.addCurrentNode(node);
       },
       twomove(ply: number, move: erm.SanMetaWithExtra, move2: erm.SanMetaWithExtra) {
-        let node = pnode({
+        let node = fnode('', {
           ply,
           move
         });
-        let node2 = pnode({
+        let node2 = fnode('', {
           ply: ply + 1,
           move: move2
         });

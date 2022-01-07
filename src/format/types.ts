@@ -1,12 +1,12 @@
-import { PNode } from './pnode'
-import { Fen, SanOrCastles, Move } from '../types'
+import { FRoot } from './fnode'
+import { Fen, SanOrCastles, Move, Situation } from '../types'
 
 export type Ply = number
 
 export type QPGN = {
   tags: TagMap,
   fens: FenMap,
-  variations: PNode<QMove>,
+  variations: FRoot<QMove, Situation | undefined>,
   branchPlies: Array<Ply>
 }
 
