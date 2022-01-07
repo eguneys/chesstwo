@@ -235,6 +235,9 @@ export const posmap: PosMap<Pos> = (() => {
   return res
 })()
 
+export const poss: Array<Pos> = eposs.flatMap(file => eposs.map(rank =>
+  pos_make(file, rank)))
+
 export const rays: RayRoleMap<PosMap<Array<Ray>>> = objmap(raydirs, 
   (role, [dirs, projections]) => 
   mapmap(posmap, (pos: Pos, _) => 
@@ -305,9 +308,20 @@ export function isRole(_: string): _ is Role {
   return roles.includes(_)
 }
 
+export function isPromotable(_: string): _ is PromotableRole {
+  return promotables.includes(_ as PromotableRole)
+}
+
 export function uci_role(uci: string) {
   let res = uci.toLowerCase()
   if (isRole(res)) {
+    return res
+  }
+}
+
+export function uci_promotable(uci: string) {
+  let res = uci.toLowerCase()
+  if (isPromotable(res)) {
     return res
   }
 }

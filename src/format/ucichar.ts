@@ -8,15 +8,15 @@ export type FilePairPromotable = string
 export function uci_char(uci: Uci) {
   let { orig, dest } = uci
   if (uci.promote) {
-    pos_to2char(orig) + pos_to2char_p(pos_file(dest), uci.promote)
+    return pos_to2char(orig) + pos_to2char_p(pos_file(dest), uci.promote)
   } else {
-    pos_to2char(orig) + pos_to2char(dest)
+    return pos_to2char(orig) + pos_to2char(dest)
   }
 }
 
 
 const charShift = 35
-const voidChar = String.fromCharCode(33) // '!'. skip 34 \"
+export const voidChar = String.fromCharCode(33) // '!'. skip 34 \"
 
 const pos_hash = (pos: Pos) => pos
 
@@ -35,4 +35,5 @@ promotables.map((role, i) => {
   })
 })
 
-const pos_to2char_p = (file: File, role: PromotableRole) => promotion2charMap.get(file + role) || voidChar
+const pos_to2char_p = (file: File, role: PromotableRole) => promotion2charMap.get(role + file) || voidChar
+
