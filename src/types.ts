@@ -208,13 +208,13 @@ export function isEpos(_: number): _ is Epos {
 }
 
 export function pos_make(file: File, rank: Rank) {
-  return file * 10 + rank
+  return ((file - 1) * 8 + (rank - 1)) + 1
 }
 export function pos_file(pos: Pos): File {
-  return Math.floor(pos / 10) as File
+  return Math.floor((pos-1) / 8) + 1 as File
 }
 export function pos_rank(pos: Pos): Rank {
-  return pos % 10 as Rank
+  return ((pos-1) % 8) + 1 as Rank
 }
 
 export function pos_dir(pos: Pos, dir: Dir) {
