@@ -88,6 +88,35 @@ export function climb_with_root<A, B>(root: FRoot<A, B>, fn: (root: B, child: A,
   root.children.forEach(_ => helper(root.data, _))
 }
 
+export function map_with_root<A, B, D>(_root: FRoot<A, B>, 
+  fn: (root: B, child: A, max_depth: number) => [TwoCharId, D, B] | undefined) {
+  function helper(root_value: B, child: FNode<A>): FNode<D> | undefined {
+    let res = fn(root_value, child.data, max_depth(child))
+    if (res) {
+      let [id, next, nextB] = res
+      let new_child = node(id, next)
+
+      child.children.forEach(_ => {
+        let cc = helper(nextB, _)
+        if (cc) {
+          add_node(new_child, cc)
+        }
+      })
+      return new_child
+    }
+  }
+
+  let new_root: FRoot<D, B> = root(_root.data)
+  _root.children.forEach(_ => {
+    let cc = helper(_root.data, _)
+    if (cc) {
+      add_node(new_root, cc)
+    }
+  })
+
+  return new_root
+}
+
 export function map<A, B, C, D>(_root: FRoot<A, B>, fna:(a: A) => C, fnb:(b: B) => D): FRoot<C, D> {
 
   function helper(child: FNode<A>) {
@@ -101,6 +130,14 @@ export function map<A, B, C, D>(_root: FRoot<A, B>, fna:(a: A) => C, fnb:(b: B) 
   add_nodes(new_root, _root.children.map(_ => helper(_)))
 
   return new_root 
+}
+
+export function max_depth_root<A, B>(root: FRoot<A, B>): number {
+  if (root.children[0]) {
+    return max_depth(root.children[0]) + 1
+  } else {
+    return 1
+  }
 }
 
 export function max_depth<A>(root: FNode<A>): number {

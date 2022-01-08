@@ -2,7 +2,7 @@ import * as erm from './types';
 import { dis } from 'esra';
 import { FRoot, 
   FNode,
-  climb_with_root,
+  map_with_root,
   add_node,
   root,
   node as fnode } from './fnode'
@@ -38,11 +38,10 @@ export default class StudyBuilder {
     let fenMap = new Map();
     if (this._root) {
 
-      let res_root: FRoot<erm.QMove, Situation> = root(initial_situation)
       let meta_root: FRoot<ExtraPly, Situation> = root(initial_situation)
       add_node(meta_root, this._root)
 
-      climb_with_root(meta_root, (situation, _, maxDepth) => {
+      let res_root: FRoot<erm.QMove, Situation> = map_with_root(meta_root, (situation, _, maxDepth) => {
         let maxPly = _.ply + maxDepth;
         if (_.extra.san) {
           let tsmove;
@@ -50,6 +49,7 @@ export default class StudyBuilder {
             tsmove = situation_sanorcastles(situation, _.extra.san);
           } catch (e) {
             console.warn('throws at ', situation_fen(situation), _.extra.san, e.message);
+            this.errors.push([_.ply, _.extra])
           }
           if (tsmove) {
             let after = tsmove.after;
@@ -62,9 +62,6 @@ export default class StudyBuilder {
             }
 
             let path = uci_char(move_ucio(tsmove))
-            let res_node = fnode(path, qmove)
-            add_node(res_root, res_node)
-
 
             let res = fenMap.get(situation_fen(situation));
             if (!res) {
@@ -73,13 +70,12 @@ export default class StudyBuilder {
               res.push(qmove);
             }
 
-            return after;
+            return [path, qmove, after];
           } else {
             console.warn('couldnt make ts move', situation_fen(situation), _.extra.san);
             this.errors.push([_.ply, _.extra])
           }
         }
-        return situation
       });
 
       let branchPlies = [];

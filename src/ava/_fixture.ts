@@ -1,3 +1,17 @@
+export const branch = `
+[Event "heroku's Study: Bölüm 1"]
+[Site "https://lichess.org/study/ZkVMZ4QJ/jcHnib7G"]
+[Result "*"]
+[UTCDate "2022.01.08"]
+[UTCTime "19:23:47"]
+[Variant "Standard"]
+[ECO "C30"]
+[Opening "King's Gambit"]
+[Annotator "https://lichess.org/@/heroku"]
+
+1. e4 e5 2. f4 (2. d4 d6) 2... f6 *
+`
+
 export const enpassant = `
 [Event "Queen's Gambit: En passant"]
 [Site "https://lichess.org/study/UDGsyFSt/gQ1imQmH"]
