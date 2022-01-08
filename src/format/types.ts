@@ -12,10 +12,9 @@ export type QPGN = {
 
 export type QMove = {
   ply: Ply,
-  maxPly?: Ply,
-  move: SanMetaWithExtra,
-  tsmove?: Move,
-  fenAfter?: Fen
+  maxPly: Ply,
+  extra: SanMetaWithExtra,
+  move: Move
 }
 
 export type QScore = {
@@ -28,6 +27,6 @@ export type TagMap = Map<string, string>
 export type FenMap = Map<Fen, Array<QMove>>
 
 export type SanMetaWithExtra = {
-  san?: SanOrCastles,
+  san: SanOrCastles,
   extra: any
 }

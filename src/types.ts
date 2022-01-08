@@ -759,6 +759,10 @@ export function pos_uci(pos: Pos) {
     rank_uci(pos_rank(pos))
 }
 
+export function move_uci(move: Move): string {
+  return pos_uci(move.action.orig) + pos_uci(move.action.dest) + ("promote" in move.action && move.action.promote ? '=' + move.action.promote.toUpperCase() : '')
+}
+
 export function move_san(move: Move): string {
   let { action, piece } = move
 
@@ -937,7 +941,12 @@ export function san(san: string): San | undefined {
   }  
 }
 
-
+export function sanorcastles_san(sanorc: SanOrCastles) {
+  if (typeof sanorc === 'string') return sanorc
+  else {
+    return sanorc.san
+  }
+}
 
 export function makeSan(san: string,
   roleS: string,

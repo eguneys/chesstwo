@@ -1,10 +1,19 @@
-import { uci_pos, uci_promotable, Pos, PromotableRole } from '../types'
+import { uci_pos, uci_promotable, Pos, PromotableRole, Move } from '../types'
 
 
 export type Uci = {
   orig: Pos,
   dest: Pos,
   promote?: PromotableRole
+}
+
+export function move_ucio(move: Move): Uci {
+
+  return {
+    orig: move.action.orig,
+    dest: move.action.dest,
+    promote: "promote" in move.action ? move.action.promote: undefined
+  }
 }
 
 export function uci_uci(uci: string) {

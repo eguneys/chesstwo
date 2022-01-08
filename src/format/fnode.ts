@@ -27,6 +27,14 @@ export function path_tail(path: Path) {
   return path.slice(2)
 }
 
+export function path_last(path: Path) {
+  return path.slice(-2)
+}
+
+export function path_init(path: Path) {
+  return path.slice(0, -2)
+}
+
 export function root<A, B>(data: B): FRoot<A, B> {
   return {
     data,
@@ -103,8 +111,44 @@ export function max_depth<A>(root: FNode<A>): number {
   }
 }
 
-
 export const fid = (_: any) => _
+
+export const Path_root = '_r'
+export const SEP_root = '└'
+export const SEP_path = '┬'
+export const SEP_node = '├'
+
+export function flat<A, B>(root: FRoot<A, B>, fna: (a: A) => string = fid, fnb: (b: B) => string = fid) {
+  function traverse(node: FNode<A>, parentPath: Path): string {
+    let path = parentPath + node.id
+    return node.children.map(_ =>
+      traverse(_, path)).concat([path, fna(node.data)].join(SEP_path)).join(SEP_node)
+  }
+
+  return root.children
+    .map(_ => traverse(_, Path_root))
+    .join(SEP_node) + SEP_root + fnb(root.data)
+}
+
+export function flat_root<A, B>(str: string, fna: (_: string) => A = fid, fnb: (_: string) => B = fid): FRoot<A, B> {
+
+  let [_childrenS, _rootS] = str.split(SEP_root)
+
+  let _root: FRoot<A, B> = root(fnb(_rootS))
+
+  _childrenS.split(SEP_node).sort((a, b) => 
+    a.split(SEP_path)[0].length - b.split(SEP_path)[0].length
+  ).forEach(_childS => {
+    let [pathS, dataS] = _childS.split(SEP_path)
+    let _node = node(path_last(pathS), fna(dataS))
+
+    add_node_at(_root, path_tail(path_init(pathS)), _node) 
+  })
+
+  return _root
+}
+
+
 
 /*
 https://github.com/substack/node-archy

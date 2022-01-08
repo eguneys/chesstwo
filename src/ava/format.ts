@@ -19,7 +19,7 @@ test('enpassant', t => {
 })
 
 
-test('promotion', t => {
+test.only('promotion', t => {
   let res = Esrar(promotion)
   let qpgn = res.pgns[0].fens
 
@@ -27,7 +27,7 @@ test('promotion', t => {
 
   t.truthy(fxg8)
 
-  let move = fxg8![0].tsmove
+  let { move } = fxg8![0]
   t.is(move && move_san(move), 'fxg8=Q') 
 
 
@@ -35,7 +35,7 @@ test('promotion', t => {
 
   t.truthy(c1N)
 
-  move = c1N![0].tsmove
+  move = c1N![0].move
   t.is(move && move_san(move), 'c1=N') 
 
 
@@ -76,7 +76,7 @@ test('frenchadvanced', t => {
   t.truthy(b2d4)
 
 
-  let move = b2d4![0].tsmove
+  let { move } = b2d4![0]
   t.is(move && move_san(move), 'cxd4')
   t.is(res.errors.length, 0)
 })

@@ -7,18 +7,25 @@ import { FRoot,
   root,
   node as fnode } from './fnode'
 import { Situation, initial_situation, fen_situation, situation_fen, situation_sanorcastles, SanOrCastles, sanOrCastles } from '../types';
+import { uci_char } from './ucichar'
+import { move_ucio } from './uci'
 
-export type CurrentAndParent = [FNode<erm.QMove> | undefined, FNode<erm.QMove>]
+export type CurrentAndParent = [FNode<ExtraPly> | undefined, FNode<ExtraPly>]
+
+export type ExtraPly = {
+  extra: erm.SanMetaWithExtra,
+  ply: erm.Ply
+}
 
 export default class StudyBuilder {
 
   errors: Array<[erm.Ply, erm.SanMetaWithExtra]>
   pgns: Array<erm.QPGN>;
   _tags: erm.TagMap;
-  _root?: FNode<erm.QMove>;
+  _root?: FNode<ExtraPly>;
   __branchs: Array<CurrentAndParent>;
-  __currentParent?: FNode<erm.QMove>;
-  __current?: FNode<erm.QMove>;
+  __currentParent?: FNode<ExtraPly>;
+  __current?: FNode<ExtraPly>;
 
   constructor() {
     this.errors = []
@@ -31,31 +38,45 @@ export default class StudyBuilder {
     let fenMap = new Map();
     if (this._root) {
 
-      let _root: FRoot<erm.QMove, Situation> = root(initial_situation)
-      add_node(_root, this._root)
+      let res_root: FRoot<erm.QMove, Situation> = root(initial_situation)
+      let meta_root: FRoot<ExtraPly, Situation> = root(initial_situation)
+      add_node(meta_root, this._root)
 
-      climb_with_root(_root, (situation, _, maxDepth) => {
-        _.maxPly = _.ply + maxDepth;
-        if (_.move.san) {
+      climb_with_root(meta_root, (situation, _, maxDepth) => {
+        let maxPly = _.ply + maxDepth;
+        if (_.extra.san) {
           let tsmove;
           try {
-            tsmove = situation_sanorcastles(situation, _.move.san);
+            tsmove = situation_sanorcastles(situation, _.extra.san);
           } catch (e) {
-            console.warn('throws at ', situation_fen(situation), _.move.san, e.message);
+            console.warn('throws at ', situation_fen(situation), _.extra.san, e.message);
           }
           if (tsmove) {
             let after = tsmove.after;
-            _.tsmove = tsmove;
+            
+            let qmove = {
+              ply: _.ply,
+              extra: _.extra,
+              maxPly,
+              move: tsmove
+            }
+
+            let path = uci_char(move_ucio(tsmove))
+            let res_node = fnode(path, qmove)
+            add_node(res_root, res_node)
+
+
             let res = fenMap.get(situation_fen(situation));
             if (!res) {
-              fenMap.set(situation_fen(situation), [_]);
+              fenMap.set(situation_fen(situation), [qmove]);
             } else {
-              res.push(_);
+              res.push(qmove);
             }
+
             return after;
           } else {
-            console.warn('couldnt make ts move', situation_fen(situation), _.move.san);
-            this.errors.push([_.ply, _.move])
+            console.warn('couldnt make ts move', situation_fen(situation), _.extra.san);
+            this.errors.push([_.ply, _.extra])
           }
         }
         return situation
@@ -71,7 +92,7 @@ export default class StudyBuilder {
       let pgn = {
         tags: this._tags,
         fens: fenMap,
-        variations: _root,
+        variations: res_root,
         branchPlies
       };
 
@@ -84,7 +105,7 @@ export default class StudyBuilder {
     this.__current = undefined;
   }
 
-  addCurrentNode(node: FNode<erm.QMove>) {
+  addCurrentNode(node: FNode<ExtraPly>) {
     if (this.__current) {
       add_node(this.__current, node);
     }
@@ -117,23 +138,23 @@ export default class StudyBuilder {
     let self = this;
     
     return {
-      move(ply: number, move: erm.SanMetaWithExtra) {
+      move(ply: number, extra: erm.SanMetaWithExtra) {
 
-        let node = fnode('', {
+        let node = fnode('TODO', {
           ply,
-          move
+          extra 
         });
 
         self.addCurrentNode(node);
       },
-      twomove(ply: number, move: erm.SanMetaWithExtra, move2: erm.SanMetaWithExtra) {
-        let node = fnode('', {
+      twomove(ply: number, extra: erm.SanMetaWithExtra, extra2: erm.SanMetaWithExtra) {
+        let node = fnode('TODO', {
           ply,
-          move
+          extra
         });
-        let node2 = fnode('', {
+        let node2 = fnode('TODO', {
           ply: ply + 1,
-          move: move2
+          extra: extra2
         });
 
         self.addCurrentNode(node);
