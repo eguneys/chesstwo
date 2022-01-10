@@ -17,6 +17,9 @@ export type ExtraPly = {
   ply: erm.Ply
 }
 
+
+export const fixTag = (tag: string) => tag.replace(/^"|"$/g, '')
+
 export default class StudyBuilder {
 
   errors: Array<[erm.Ply, erm.SanMetaWithExtra]>
@@ -166,7 +169,7 @@ export default class StudyBuilder {
         self.addPgn();
       },
       tag(name: string, value: string) {
-        self._tags.set(name, value);
+        self._tags.set(name, fixTag(value));
       },
       san(_san: string) {
         return sanOrCastles(_san);

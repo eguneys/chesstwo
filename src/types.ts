@@ -119,7 +119,6 @@ export type PosActions = {
 
 
 export type San = {
-  san: string,
   to: Pos,
   role: Role,
   file?: File,
@@ -944,7 +943,14 @@ export function san(san: string): San | undefined {
 export function sanorcastles_san(sanorc: SanOrCastles) {
   if (typeof sanorc === 'string') return sanorc
   else {
-    return sanorc.san
+
+    let roleS = sanorc.role === 'p' ? '' : sanorc.role.toUpperCase()
+    let rankS = sanorc.rank ? rank_uci(sanorc.rank):''
+    let fileS = sanorc.file? file_uci(sanorc.file):''
+    let toS = pos_uci(sanorc.to)
+    let promotionS = sanorc.promotion?('=' + sanorc.promotion.toUpperCase()) : ''
+
+    return roleS + rankS + fileS + toS + promotionS
   }
 }
 
@@ -969,7 +975,6 @@ export function makeSan(san: string,
 
     if (to) {
       return {
-        san,
         to,
         role,
         file,
