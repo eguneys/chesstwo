@@ -718,6 +718,12 @@ export function slide_uci(slide: Slide) {
   return pos_uci(slide.orig) + pos_uci(slide.dest)
 }
 
+export function ray_uci(ray: Ray) {
+  return pos_uci(ray.orig) +
+    ray.between.map(pos_uci).join('') +
+    pos_uci(ray.dest)
+}
+
 export const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 export const ranks = ['1', '2', '3', '4', '5', '6', '7', '8']
 

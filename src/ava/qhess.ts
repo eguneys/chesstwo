@@ -10,8 +10,8 @@ import { uci_uci, situation_uci_move } from '../format/uci'
 test('backrank', t => {
 
   let query = `
-B n p
-  `
+Ra c k d  k~cd
+`
 
   let query2 = `
 R r a k c  k~ac
@@ -21,7 +21,7 @@ Rxr
   let res = li_100
     .trim()
     .split('\n')
-    .slice(0, 1)
+    .slice(3, 4)
     .filter(line => {
       let [_, fen, _moves] = line.split(',')
 
@@ -30,11 +30,9 @@ Rxr
       let situation = fen_situation(fen)!
       let move = situation_uci_move(situation, uci_uci(moves[0])!)!
 
-      // console.log(board_pos(situation.board, uci_pos('b6')!), uci_pos('b6'))
-
       fen = situation_fen(move.after)
 
-      return qh(fen, query.trim())
+      return [fen, qh(fen, query.trim())]
     })
 
   console.log(res)
