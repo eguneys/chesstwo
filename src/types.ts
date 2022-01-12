@@ -297,7 +297,7 @@ export function color_opposite(c: Color) {
   return c === 'w' ? 'b' : 'w'
 }
 
-export function white_if(b: boolean) {
+export function white_if(b: boolean): Color {
   return b ? 'w' : 'b'
 }
 
@@ -325,7 +325,7 @@ export function uci_promotable(uci: string) {
   }
 }
 
-export function uci_piece(uci: string) {
+export function uci_piece(uci: string): PieceOrPawn | undefined {
 
   let role = uci.toLowerCase()
   if (isRole(role)) {
