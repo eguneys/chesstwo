@@ -21,8 +21,8 @@ Rxr
   let res = li_100
     .trim()
     .split('\n')
-    .slice(3, 4)
-    .filter(line => {
+    .slice(0, 8)
+    .flatMap(line => {
       let [_, fen, _moves] = line.split(',')
 
       let moves = _moves.split(' ')
@@ -32,9 +32,10 @@ Rxr
 
       fen = situation_fen(move.after)
 
-      return [fen, qh(fen, query.trim())]
+      if (qh(fen, query.trim())) {
+        return [fen]
+      }
+      return []
     })
-
-  console.log(res)
 
 })

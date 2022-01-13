@@ -157,6 +157,8 @@ export function qh(fen: Fen, query: string) {
     return []
   })
 
-  console.log(res.map(_ => mapmap(_, (bind, pos) => pos_uci(pos))))
+  if (res.length > 0) {
+    console.log(fen, res.map(_ => mapmap(_, (bind, pos) => pos_uci(pos)))[0], res.length)
+  }
   return false
 }
