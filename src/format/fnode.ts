@@ -155,7 +155,7 @@ export const SEP_root = '└'
 export const SEP_path = '┬'
 export const SEP_node = '├'
 
-export function flat<A, B>(root: FRoot<A, B>, fna: (a: A) => string = fid, fnb: (b: B) => string = fid) {
+export function str<A, B>(root: FRoot<A, B>, fna: (a: A) => string = fid, fnb: (b: B) => string = fid) {
   function traverse(node: FNode<A>, parentPath: Path): string {
     let path = parentPath + node.id
     return node.children.map(_ =>
@@ -167,7 +167,7 @@ export function flat<A, B>(root: FRoot<A, B>, fna: (a: A) => string = fid, fnb: 
     .join(SEP_node) + SEP_root + fnb(root.data)
 }
 
-export function flat_root<A, B>(str: string, fna: (_: string) => A = fid, fnb: (_: string) => B = fid): FRoot<A, B> {
+export function str_root<A, B>(str: string, fna: (_: string) => A = fid, fnb: (_: string) => B = fid): FRoot<A, B> {
 
   let [_childrenS, _rootS] = str.split(SEP_root)
 
@@ -185,7 +185,41 @@ export function flat_root<A, B>(str: string, fna: (_: string) => A = fid, fnb: (
   return _root
 }
 
+export const ROOT_ID = 'root'
 
+export function flat<A, B>(root: FRoot<A, B>, fna: (a: A) => object = fid, fnb: (b: B) => object = fid) {
+  function traverse(node: FNode<A>, parentPath: Path): Array<[Path, object]> {
+    let path = parentPath + node.id
+    return node.children.flatMap(_ =>
+      traverse(_, path)).concat([[path, fna(node.data)]])
+  }
+
+  return root.children
+    .flatMap(_ => traverse(_, Path_root))
+  .concat([[ROOT_ID, fnb(root.data)]])
+}
+
+
+export function flat_root<A, B>(flat_tree: Array<[Path, object]>, fna: (_: object) => A = fid, fnb: (_: object) => B = fid): FRoot<A, B> {
+
+  let [_, rootS] = flat_tree.find(([path, _]) => path === ROOT_ID)!
+
+  let _root: FRoot<A, B> = root(fnb(rootS))
+
+
+  flat_tree
+  .sort(([a, _], [b, __]) => 
+    a.length - b.length
+  ).forEach(([path, data]) => {
+
+    if (path === ROOT_ID) return
+    let _node = node(path_last(path), fna(data))
+
+    add_node_at(_root, path_tail(path_init(path)), _node) 
+  })
+
+  return _root
+}
 
 /*
 https://github.com/substack/node-archy

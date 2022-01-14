@@ -777,7 +777,7 @@ export function move_san(move: Move): string {
   let pieceS = piece_san(piece),
     fileS = pawnCaptureOrAmbigiousFile?file_uci(pos_file(action.orig)):'',
     rankS = ambigiousRank?rank_uci(pos_rank(action.orig)):'',
-    captureS = "capture" in action?'x':'',
+    captureS = (pawnCapture || "capture" in action)?'x':'',
     toS = pos_uci(action.dest),
     promotionS = "promote" in action && action.promote ?`=${action.promote.toUpperCase()}`:'',
     checkS = '',
@@ -947,10 +947,11 @@ export function sanorcastles_san(sanorc: SanOrCastles) {
     let roleS = sanorc.role === 'p' ? '' : sanorc.role.toUpperCase()
     let rankS = sanorc.rank ? rank_uci(sanorc.rank):''
     let fileS = sanorc.file? file_uci(sanorc.file):''
+    let captureS = sanorc.capture ? 'x':''
     let toS = pos_uci(sanorc.to)
     let promotionS = sanorc.promotion?('=' + sanorc.promotion.toUpperCase()) : ''
 
-    return roleS + rankS + fileS + toS + promotionS
+    return roleS + rankS + fileS + captureS + toS + promotionS
   }
 }
 

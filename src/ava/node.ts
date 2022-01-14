@@ -1,8 +1,9 @@
 import test from 'ava'
 
-import { max_depth_root, map_with_root, flat_root, flat, root, node, add_node, add_nodes, pretty, FRoot } from '../format/fnode'
+import { max_depth_root, map_with_root, str_root, str, root, node, add_node, add_nodes, pretty, FRoot } from '../format/fnode'
 import Esrar from '../format'
 import { branch } from './_fixture'
+import { flat, flat_root } from '../format/fnode'
 
 test('map', t => {
 
@@ -62,10 +63,12 @@ test('flat', t => {
   add_node(b3, c3)
 
 
-  let _root2 = flat_root(flat(_root))
+  let _root2 = str_root(str(_root))
 
   t.is(pretty(_root), pretty(_root2))
 
+  let _root3 = flat_root(flat(_root))
+  t.is(pretty(_root), pretty(_root3))
 
 
 })
