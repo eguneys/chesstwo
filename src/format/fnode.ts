@@ -187,24 +187,24 @@ export function str_root<A, B>(str: string, fna: (_: string) => A = fid, fnb: (_
 
 export const ROOT_ID = 'root'
 
-export function flat<A, B>(root: FRoot<A, B>, fna: (a: A) => object = fid, fnb: (b: B) => object = fid) {
-  function traverse(node: FNode<A>, parentPath: Path): Array<[Path, object]> {
+export function flat<A, B>(root: FRoot<A, B>): Array<[Path, A | B]> {
+  function traverse(node: FNode<A>, parentPath: Path): Array<[Path, A]> {
     let path = parentPath + node.id
     return node.children.flatMap(_ =>
-      traverse(_, path)).concat([[path, fna(node.data)]])
+      traverse(_, path)).concat([[path, node.data]])
   }
 
-  return root.children
-    .flatMap(_ => traverse(_, Path_root))
-  .concat([[ROOT_ID, fnb(root.data)]])
+  return (root.children
+    .flatMap(_ => traverse(_, Path_root)) as Array<[Path, A | B]>)
+  .concat([[ROOT_ID, root.data]])
 }
 
 
-export function flat_root<A, B>(flat_tree: Array<[Path, object]>, fna: (_: object) => A = fid, fnb: (_: object) => B = fid): FRoot<A, B> {
+export function flat_root<A, B>(flat_tree: Array<[Path, A | B]>): FRoot<A, B> {
 
   let [_, rootS] = flat_tree.find(([path, _]) => path === ROOT_ID)!
 
-  let _root: FRoot<A, B> = root(fnb(rootS))
+  let _root: FRoot<A, B> = root(rootS as B)
 
 
   flat_tree
@@ -213,7 +213,7 @@ export function flat_root<A, B>(flat_tree: Array<[Path, object]>, fna: (_: objec
   ).forEach(([path, data]) => {
 
     if (path === ROOT_ID) return
-    let _node = node(path_last(path), fna(data))
+    let _node = node(path_last(path), data)
 
     add_node_at(_root, path_tail(path_init(path)), _node) 
   })
