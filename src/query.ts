@@ -13,7 +13,8 @@ type Slide = {
 }
 
 type Flee = {
-  actor: Bind,
+  role_bind: Bind,
+  role: RayRole,
   flee: Array<Bind>
 }
 
@@ -35,6 +36,46 @@ function match(bind: Bind, pos: Pos, situation: Situation) {
 }
 
 const ALL_POS = [...posmap.values()]
+
+function flee(situation: Situation, _flee: Flee) {
+
+  let { flee, role, role_bind } = _flee
+
+  let color = role_bind.toUpperCase() === role_bind ? situation.turn : color_opposite(situation.turn)
+
+  return ALL_POS.filter(pos => {
+    let piece = board_pos(situation.board, pos)
+    return piece && piece.role === role && piece.color === color
+  }).flatMap(pos => {
+    let _rays = rays[role].get(pos)!;
+
+    let res = []
+
+    return combinations(_rays.map((_, i) => i), flee.length)
+      .flatMap(_ => [_, _.slice(0).reverse()])
+      .filter(combination =>
+      _rays.every((ray, i) => {
+        let fi = combination.indexOf(i)
+        if (fi !== -1) {
+          let ok = match(flee[fi], ray.dest, situation)
+          return ok
+        } else {
+         return !!board_pos(situation.board, ray.dest) 
+        }
+      })
+    ).map((combination) => {
+      let binds = new Map()
+      binds.set(role_bind, pos)
+
+      combination.forEach((ri, fi) => {
+        binds.set(flee[fi], _rays[ri].dest)
+      })
+
+      return binds
+    })
+  })
+
+}
 
 function slide(situation: Situation, _slide: Slide) {
   let { slide, role, bind, role_bind } = _slide
@@ -96,6 +137,7 @@ function pass(situation: Situation, rule: Rule) {
   if ("slide" in rule) {
     return slide(situation, rule)
   } else {
+    return flee(situation, rule)
   }
 }
 
@@ -108,7 +150,10 @@ function str_rule(rule: string): Rule | undefined {
   let space = rule[1]
 
   if (space === '~') {
-    let actor = rule[0]
+    let role_bind = rule[0]
+
+    let role = uci_role(rule[0])
+    if (!role || role === 'p') { return undefined }
 
     let flee = rule
       .slice(2)
@@ -116,7 +161,8 @@ function str_rule(rule: string): Rule | undefined {
       .map(_ => _)
 
     return {
-      actor,
+      role_bind,
+      role,
       flee
     }
   }
@@ -149,7 +195,7 @@ export function qh(fen: Fen, query: string) {
 
   let rules = lines[0].split('  ')
 
-  let res = rules.flatMap(rule => {
+  let res = rules.map(rule => {
     let res = str_rule(rule)
     if (res) {
       return pass(situation, res) || []
@@ -157,8 +203,39 @@ export function qh(fen: Fen, query: string) {
     return []
   })
 
-  if (res.length > 0) {
-    console.log(fen, res.map(_ => mapmap(_, (bind, pos) => pos_uci(pos)))[0], res.length)
+  let matcheds = res[0].flatMap(_res0 => 
+    res[1].flatMap(_res1 => 
+      mapmatch(_res0, _res1) ? [[_res0, _res1]] : []
+    )
+  )
+
+  if (matcheds.length > 0) {
+
+    let move_rule = lines[1]
+
+    let orig = move_rule[0]
+    let dest = move_rule[1]
+
+    return pos_uci(matcheds[0][0].get(orig)!) + pos_uci(matcheds[0][0].get(dest)!)
   }
+
+  /*
+  let _res = res[0]
+  if (_res.length > 0) {
+    console.log(fen, _res.map(_ => mapmap(_, (bind, pos) => pos_uci(pos)))[0], res.length)
+  }
+*/
   return false
+}
+
+
+function mapmatch(a: BindMap, b: BindMap) {
+  for (let [key, value] of a) {
+    let bvalue = b.get(key)
+
+    if (bvalue && value !== bvalue) {
+      return false
+    }
+  }
+  return true
 }

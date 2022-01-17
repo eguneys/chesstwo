@@ -9,19 +9,33 @@ import { uci_uci, situation_uci_move } from '../format/uci'
 
 test('backrank', t => {
 
-  let query = `
+  let queries = [
+    `
 Ra c k d  k~cd
-`
+Ra
+`, `
+Qa r  Qa k
+Qa
+    `,
+    `
+Na k  Na r
+Na
+    `,
+    `
+Q a  B a  Qa k
+Qa
+    `,
+    `
+N q  N a
+Nq
+    `
+  ]
 
-  let query2 = `
-R r a k c  k~ac
-Rxr
-`
 
   let res = li_100
     .trim()
     .split('\n')
-    .slice(0, 8)
+    .slice(0, 10)
     .flatMap(line => {
       let [_, fen, _moves] = line.split(',')
 
@@ -32,8 +46,12 @@ Rxr
 
       fen = situation_fen(move.after)
 
-      if (qh(fen, query.trim())) {
-        return [fen]
+      let match = queries.filter(query => qh(fen, query.trim()))
+
+      if (match.length > 0) {
+        console.log('ok ', fen, match[0], qh(fen, match[0].trim()))
+      } else {
+        console.warn('not ', fen)
       }
       return []
     })
