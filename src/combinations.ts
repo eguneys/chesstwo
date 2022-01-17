@@ -15,6 +15,26 @@ let places = [0 1 2 3 4]
 [4, 6, 7, 8]
 [5, 6, 7, 8]
 */
+/*
+[0, 1, 2] 2
+
+[0, 1]
+[0, 2]
+[1, 0]
+[1, 2]
+[2, 0]
+[2, 2]
+*/
+
+export function all_combinations<A>(keys: Array<A>, nb: number): Array<Array<A>> {
+  return keys.flatMap(key => {
+    if (nb === 1) {
+      return [[key]]
+    }
+    return all_combinations(keys, nb - 1).map(_ => _.concat(key))
+  })
+}
+
 
 export function combinations<A>(keys: Array<A>, nb: number) {
   let combo = keys.map((_, i) => i >= keys.length - nb)

@@ -1,7 +1,8 @@
 import { rays, board_pos, color_opposite, uci_role, RayRole, posmap, Pos, Fen, uci_piece, PieceOrPawn, Situation, fen_situation } from './types'
 import { mapmap, pos_uci, ray_uci, uci_pos } from './types'
+import { Pawn, pawncapture_rays } from './types'
 
-import { combinations } from './combinations'
+import { all_combinations, combinations } from './combinations'
 
 type Bind = string
 
@@ -18,12 +19,17 @@ type Flee = {
   flee: Array<Bind>
 }
 
+type PawnCover = {
+  role_bind: Bind,
+  pawn_cover: Array<Bind>
+}
+
 type BindMap = Map<Bind, Pos>
 
-type Rule = Slide | Flee
+type Rule = Slide | Flee | PawnCover
 
 
-function match(bind: Bind, pos: Pos, situation: Situation) {
+function match(bind: Bind, pos: Pos, situation: Situation, capture: boolean) {
   let role = uci_role(bind)
   let color = bind.toUpperCase() === bind ? situation.turn : color_opposite(situation.turn)
 
@@ -31,7 +37,7 @@ function match(bind: Bind, pos: Pos, situation: Situation) {
   if (role) {
     return piece && piece.role === role && piece.color === color
   } else {
-    return !piece
+    return !piece || capture
   }
 }
 
@@ -51,13 +57,12 @@ function flee(situation: Situation, _flee: Flee) {
 
     let res = []
 
-    return combinations(_rays.map((_, i) => i), flee.length)
-      .flatMap(_ => [_, _.slice(0).reverse()])
+    return all_combinations(_rays.map((_, i) => i), flee.length)
       .filter(combination =>
       _rays.every((ray, i) => {
         let fi = combination.indexOf(i)
         if (fi !== -1) {
-          let ok = match(flee[fi], ray.dest, situation)
+          let ok = match(flee[fi], ray.dest, situation, true)
           return ok
         } else {
          return !!board_pos(situation.board, ray.dest) 
@@ -88,7 +93,7 @@ function slide(situation: Situation, _slide: Slide) {
   }).flatMap(pos => {
     let _rays = rays[role].get(pos)!;
 
-    if (role !== bind) {
+    if (role_bind !== bind) {
       _rays = _rays.flatMap(ray => rays[role].get(ray.dest)!)
     }
     return _rays.flatMap(ray => {
@@ -96,7 +101,7 @@ function slide(situation: Situation, _slide: Slide) {
       let between_binds = slide.slice(0, slide.length - 1)
       let dest_bind = slide[slide.length - 1]
       
-      let ok = match(dest_bind, ray.dest, situation)
+      let ok = match(dest_bind, ray.dest, situation, true)
 
       if (!ok) {
         return []
@@ -111,7 +116,7 @@ function slide(situation: Situation, _slide: Slide) {
 
       let cs = combinations(keys, places.length).filter(combination =>
         between_binds.every((bind, i) =>
-          match(bind, ray.between[combination[i]], situation)
+          match(bind, ray.between[combination[i]], situation, false)
         ) &&
         ray.between.every((between, i) =>
           combination.includes(i) ||
@@ -133,9 +138,33 @@ function slide(situation: Situation, _slide: Slide) {
   })
 }
 
+function pawn_cover(situation: Situation, _pawn_cover: PawnCover) {
+
+  let { role_bind, pawn_cover } = _pawn_cover
+
+  let color = role_bind.toUpperCase() === role_bind ? situation.turn : color_opposite(situation.turn)
+
+
+  return ALL_POS.filter(pos => {
+    let piece = board_pos(situation.board, pos)
+
+    return piece && piece.role === 'p' && piece.color === color
+  }).flatMap(pos => 
+     pawncapture_rays(pos, color).map(ray => {
+
+      let binds = new Map()
+      binds.set(pawn_cover[0], ray.dest)
+      return binds
+    })
+  )
+ 
+}
+
 function pass(situation: Situation, rule: Rule) {
   if ("slide" in rule) {
     return slide(situation, rule)
+  } else if ("pawn_cover" in rule) {
+    return pawn_cover(situation, rule)
   } else {
     return flee(situation, rule)
   }
@@ -168,12 +197,25 @@ function str_rule(rule: string): Rule | undefined {
   }
 
 
+  let role = uci_role(rule[0])
+  if (role === 'p') {
+    let pawn_cover = rule.slice(1).split('')
+    let role_bind = rule[0]
+    return {
+      role_bind,
+      pawn_cover
+    }
+  }
+
+
+
+
+
   let slide = rule
     .split(' ')
 
   let first = slide[0]
-  let role = uci_role(first[0])
-  if (!role || role === 'p') { return undefined }
+  if (!role) { return undefined }
 
   let bind = first[1] || first[0] 
   let role_bind = first[0]
@@ -205,7 +247,9 @@ export function qh(fen: Fen, query: string) {
 
   let matcheds = res[0].flatMap(_res0 => 
     res[1].flatMap(_res1 => 
-      mapmatch(_res0, _res1) ? [[_res0, _res1]] : []
+      mapmatch(_res0, _res1) ? (!res[2] && [[_res0, _res1]]) || 
+      res[2].flatMap(_res2 =>
+        mapmatch(_res0, _res2) && mapmatch(_res1, _res2) ? [[_res0, _res1]] : []): []
     )
   )
 

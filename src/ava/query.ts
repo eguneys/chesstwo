@@ -13,7 +13,12 @@ test('backrank', t => {
     `
 Ra c k d  k~cd
 Ra
-`, `
+`, 
+    `
+Ra c k  k~c
+Ra
+    `,
+`
 Qa r  Qa k
 Qa
     `,
@@ -22,20 +27,36 @@ Na k  Na r
 Na
     `,
     `
-Q a  B a  Qa k
+Na k  Na b
+Na
+    `,
+    `
+Qa k  B a
 Qa
     `,
     `
 N q  N a
 Nq
+    `,
+    `
+Qa c k d  k~cde  Pe
+Qa
     `
   ]
 
+let queries2 = []
 
+  queries2 = [`
+Qa k  B a
+Qa
+` ]
+
+
+  let ok = 0 , not = 0
   let res = li_100
     .trim()
     .split('\n')
-    .slice(0, 10)
+    .slice(8, 20)
     .flatMap(line => {
       let [_, fen, _moves] = line.split(',')
 
@@ -48,12 +69,17 @@ Nq
 
       let match = queries.filter(query => qh(fen, query.trim()))
 
+
       if (match.length > 0) {
+        ok++
         console.log('ok ', fen, match[0], qh(fen, match[0].trim()))
       } else {
+        not++
         console.warn('not ', fen)
       }
       return []
     })
+
+  console.log('ok ' + ok, ' not ' + not)
 
 })
