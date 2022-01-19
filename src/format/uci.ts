@@ -1,4 +1,5 @@
 import { uci_pos, uci_promotable, Pos, PromotableRole, Move } from '../types'
+import { Situation, situation_valids, board_pos, situation_after } from '../types'
 
 
 export type Uci = {
@@ -41,4 +42,28 @@ export function uci_uci(uci: string) {
     }
 
   }
+}
+
+export function situation_uci_move(situation: Situation, uci: Uci): Move | undefined {
+  let valids = situation_valids(situation)
+  let action = valids.bydest.get(uci.dest)?.filter(slide => 
+    slide.orig === uci.orig &&
+    (!uci.promote || ("promote" in slide && slide.promote === uci.promote))
+  )?.[0]
+
+  if (action) {
+
+    let before = situation
+    let piece = board_pos(situation.board, action.orig)!
+      let after = situation_after(situation, action)
+
+    if (after) {
+      return {
+        action,
+        before,
+        after,
+        piece
+      }
+    }
+  } 
 }

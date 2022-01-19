@@ -297,7 +297,7 @@ export function color_opposite(c: Color) {
   return c === 'w' ? 'b' : 'w'
 }
 
-export function white_if(b: boolean) {
+export function white_if(b: boolean): Color {
   return b ? 'w' : 'b'
 }
 
@@ -325,7 +325,7 @@ export function uci_promotable(uci: string) {
   }
 }
 
-export function uci_piece(uci: string) {
+export function uci_piece(uci: string): PieceOrPawn | undefined {
 
   let role = uci.toLowerCase()
   if (isRole(role)) {
@@ -573,19 +573,7 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
     )?.[0]
 
     if (action) {
-
-      let before = situation
-      let piece = board_pos(situation.board, action.orig)!
-      let after = situation_after(situation, action)
-
-      if (after) {
-        return {
-          action,
-          before,
-          after,
-          piece
-        }
-      }
+      return situation_action_move(situation, action)
     }
   } else {
     let valids = situation_valids(situation)
@@ -596,21 +584,25 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
         _.castles === sanorcastles
       )
       if (action) {
-        let before = situation
-        let piece = board_pos(situation.board, action.orig)!;
-        let after = situation_after(situation, action)
-
-        if (after) {
-          return {
-            action,
-            before,
-            after,
-            piece
-          }
-        }
+        return situation_action_move(situation, action)
       }
     }
 
+  }
+}
+
+export function situation_action_move(situation: Situation, action: AllActions) {
+  let before = situation
+  let piece = board_pos(situation.board, action.orig)!;
+  let after = situation_after(situation, action)
+
+  if (after) {
+    return {
+      action,
+      before,
+      after,
+      piece
+    }
   }
 }
 
@@ -716,6 +708,12 @@ export function posactions(): PosActions {
 
 export function slide_uci(slide: Slide) {
   return pos_uci(slide.orig) + pos_uci(slide.dest)
+}
+
+export function ray_uci(ray: Ray) {
+  return pos_uci(ray.orig) +
+    ray.between.map(pos_uci).join('') +
+    pos_uci(ray.dest)
 }
 
 export const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
