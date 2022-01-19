@@ -1,4 +1,5 @@
 import { uci_pos, uci_promotable, Pos, PromotableRole, Move } from '../types'
+import { Fen, initial_situation, fen_situation, situation_fen, Situation, situation_valids, board_pos, situation_after } from '../types'
 
 
 export type Uci = {
@@ -6,6 +7,41 @@ export type Uci = {
   dest: Pos,
   promote?: PromotableRole
 }
+
+export function fen_after_ucis(fen: Fen, moves: Array<string>) {
+  let res = moves.map(str => uci_uci(str))
+    .reduce((situation, uci) =>
+    uci && situation && situation_uci_move(situation, uci)?.after,
+    fen === 'startpos' ? initial_situation : fen_situation(fen))
+
+  return res && situation_fen(res)
+}
+
+
+export function situation_uci_move(situation: Situation, uci: Uci) {
+  let valids = situation_valids(situation)
+  let action = valids.bydest.get(uci.dest)?.filter(slide => 
+    slide.orig === uci.orig &&
+    (!uci.promote || ("promote" in slide && slide.promote === uci.promote))
+  )?.[0]
+
+  if (action) {
+
+    let before = situation
+    let piece = board_pos(situation.board, action.orig)!;
+    let after = situation_after(situation, action)
+
+    if (after) {
+      return {
+        action,
+        before,
+        after,
+        piece
+      }
+    }
+  }
+}
+
 
 export function move_ucio(move: Move): Uci {
 
