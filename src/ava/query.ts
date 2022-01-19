@@ -56,7 +56,7 @@ Qa
   let res = li_100
     .trim()
     .split('\n')
-    .slice(8, 20)
+    .slice(0, 100)
     .flatMap(line => {
       let [_, fen, _moves] = line.split(',')
 

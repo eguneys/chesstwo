@@ -1,6 +1,7 @@
 import { rays, board_pos, color_opposite, uci_role, RayRole, posmap, Pos, Fen, uci_piece, PieceOrPawn, Situation, fen_situation } from './types'
 import { mapmap, pos_uci, ray_uci, uci_pos } from './types'
 import { Pawn, pawncapture_rays } from './types'
+import { posactions_filter, situation_some, situation_action_move } from './types'
 
 import { all_combinations, combinations } from './combinations'
 
@@ -160,7 +161,7 @@ function pawn_cover(situation: Situation, _pawn_cover: PawnCover) {
  
 }
 
-function pass(situation: Situation, rule: Rule) {
+function passOld(situation: Situation, rule: Rule) {
   if ("slide" in rule) {
     return slide(situation, rule)
   } else if ("pawn_cover" in rule) {
@@ -170,6 +171,83 @@ function pass(situation: Situation, rule: Rule) {
   }
 }
 
+function slide_new(situation: Situation, _slide: Slide) {
+  let { slide, role, bind, role_bind } = _slide
+
+  let between_binds = slide.slice(0, slide.length - 1)
+  let dest_bind = slide[slide.length - 1]
+
+  let color = role_bind.toUpperCase() === role_bind ? situation.turn : color_opposite(situation.turn)
+
+  let slides = posactions_filter(situation_some(situation), _ => _.action === 'slide') 
+
+
+  let jump_next = role_bind !== bind
+
+  return ALL_POS.filter(pos => {
+    let piece = board_pos(situation.board, pos)
+    return piece && piece.role === role && piece.color === color
+  }).flatMap(pos => {
+
+    
+    let actions = slides.byorig.get(pos)
+
+    if (!actions) {
+      return []
+    }
+
+    if (jump_next) {
+      actions = actions.flatMap(action =>
+        posactions_filter(
+          situation_some(situation_action_move(situation, action)!.after),
+          _ => _.action === 'slide').byorig.get(action.dest) || []
+      )
+    }
+
+
+    return actions.flatMap(action => {
+      if (action.action !== "slide") {
+        return []
+      }
+
+      if (action.blocks.length !== between_binds.length) {
+        return []
+      }
+
+      let ok = match(dest_bind, action.dest, situation, false)
+
+      if (!ok) {
+        return []
+      }
+
+
+      ok = action.blocks.every((pos, i) =>
+        match(between_binds[i], pos, situation, false))
+
+      let binds = new Map()
+      binds.set(role_bind, action.orig)
+      binds.set(bind, action.orig)
+      binds.set(dest_bind, action.dest)
+
+      action.blocks.forEach((pos, i) =>
+        binds.set(between_binds[i], pos)
+      )
+
+      return binds
+    })
+
+  })
+}
+
+function pass(situation: Situation, rule: Rule) {
+  if ("slide" in rule) {
+    return slide_new(situation, rule)
+  } else if ("pawn_cover" in rule) {
+    return pawn_cover(situation, rule)
+  } else {
+    return flee(situation, rule)
+  }
+}
 
 
 'Ra c k d  k~cd'

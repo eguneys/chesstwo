@@ -573,19 +573,7 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
     )?.[0]
 
     if (action) {
-
-      let before = situation
-      let piece = board_pos(situation.board, action.orig)!
-      let after = situation_after(situation, action)
-
-      if (after) {
-        return {
-          action,
-          before,
-          after,
-          piece
-        }
-      }
+      return situation_action_move(situation, action)
     }
   } else {
     let valids = situation_valids(situation)
@@ -596,21 +584,25 @@ export function situation_sanorcastles(situation: Situation, sanorcastles: SanOr
         _.castles === sanorcastles
       )
       if (action) {
-        let before = situation
-        let piece = board_pos(situation.board, action.orig)!;
-        let after = situation_after(situation, action)
-
-        if (after) {
-          return {
-            action,
-            before,
-            after,
-            piece
-          }
-        }
+        return situation_action_move(situation, action)
       }
     }
 
+  }
+}
+
+export function situation_action_move(situation: Situation, action: AllActions) {
+  let before = situation
+  let piece = board_pos(situation.board, action.orig)!;
+  let after = situation_after(situation, action)
+
+  if (after) {
+    return {
+      action,
+      before,
+      after,
+      piece
+    }
   }
 }
 
