@@ -31,7 +31,7 @@ Na k  Na b
 Na
     `,
     `
-Qa k  B a
+Qa k  B a  k a
 Qa
     `,
     `

@@ -189,7 +189,6 @@ function slide_new(situation: Situation, _slide: Slide) {
     return piece && piece.role === role && piece.color === color
   }).flatMap(pos => {
 
-    
     let actions = slides.byorig.get(pos)
 
     if (!actions) {
@@ -225,7 +224,7 @@ function slide_new(situation: Situation, _slide: Slide) {
         match(between_binds[i], pos, situation, false))
 
       let binds = new Map()
-      binds.set(role_bind, action.orig)
+      binds.set(role_bind, pos)
       binds.set(bind, action.orig)
       binds.set(dest_bind, action.dest)
 
