@@ -288,6 +288,10 @@ export function isPiece(_: PieceOrPawn): _ is Piece {
   return _.role !== 'p'
 }
 
+export function isPawn(_: PieceOrPawn): _ is Pawn {
+  return _.role === 'p'
+}
+
 export const colors = ['w', 'b']
 export function isColor(_: string): _ is Color {
   return colors.includes(_)
