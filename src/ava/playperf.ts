@@ -3,12 +3,11 @@ import test from 'ava'
 import { situation_initial, play_moves } from '../board'
 
 test('play perf', t => {
-
   let nb = 100
   let iterations = 10
 
-  nb = 1
-  iterations = 1
+  //nb = 1
+  //iterations = 1
 
   const runOne = () => {
     play_moves(situation_initial(), [

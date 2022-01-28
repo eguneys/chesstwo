@@ -1,11 +1,18 @@
 import { RayRole, Board, Pos, Piece, PieceOrPawn } from './types'
-import { rays, pawnpush_rays, pawncapture_rays } from './types'
-import { Color, isPawn, color_opposite } from './types'
-import { Epos, pos_make, pos_rank, promotables, pawn_promote_ranks } from './types'
+import { PosMap, Ray, rays, make_ray, pawn_push, pawn_capture, pawn_push2_ranks, Projection } from './types'
+import { objmap, mapmap, posmap } from './types'
+import { ColorMap, Color, isPawn, color_opposite } from './types'
+import { Epos, pos_make, pos_rank, pos_file, promotables, pawn_promote_ranks } from './types'
 import { PromotableRole, Role, Situation, situation_make} from './types'
 import { piece_make, board_make, board_clone } from './types'
 import { uci_uci, Uci } from './format/uci'
-import { Move, Castles, castlesInfos, castle_rook_rays } from './types'
+import { Castles, castlesInfos, CastlesInfo, shortCastlesInfo, longCastlesInfo } from './types'
+
+export type Move = {
+  action: AllActions,
+  piece: PieceOrPawn,
+  before: Situation
+}
 
 export type ActionType = 'slide' | 'pawnpush' | 'pawncapture' | 'enpassant' | 'castle'
 
@@ -58,6 +65,55 @@ export type Castle = IsAction & HasBlocks & {
 export type AllActions = Slide | PawnPush | PawnCapture | Enpassant | Castle
 
 
+export type CastleMap<A> = Record<Castles, A>
+
+function make_pawnpush_rays(orig: Pos, color: Color): Array<Ray> {
+  let projections: Array<Projection> = pos_rank(orig) === pawn_push2_ranks[color] && [1, 2] || [1]
+  let dir = pawn_push[color]
+  return projections.flatMap(projection => make_ray(dir, orig, projection) || [])
+}
+
+function make_pawncapture_rays(orig: Pos, color: Color): Array<Ray> {
+  return pawn_capture[color].flatMap(dir => make_ray(dir, orig, 1) || [])
+}
+
+export function make_castle_rook_rays(orig: Pos, castles: CastlesInfo): Ray | undefined {
+  return make_ray(castles.trip, orig, 
+    Math.abs(pos_file(orig) - castles.rook) as Projection)
+}
+
+export const castle_infos = {
+  'O-O': shortCastlesInfo,
+  'O-O-O': longCastlesInfo
+}
+
+
+export const castle_rook_rays: CastleMap<PosMap<Ray | undefined>> = objmap(castle_infos,
+  (_, cinfo) =>
+  mapmap(posmap, (pos: Pos, _) =>
+    make_castle_rook_rays(pos, cinfo)
+  ))
+
+
+export const colors: ColorMap<Color> = {
+  w: 'w',
+  b: 'b'
+}
+
+export const pawnpush_rays: ColorMap<PosMap<Array<Ray>>> = objmap(colors,
+  (color, _) =>
+  mapmap(posmap, (pos: Pos, _) =>
+    make_pawnpush_rays(pos, color)
+  ))
+
+export const pawncapture_rays: ColorMap<PosMap<Array<Ray>>> = objmap(colors,
+  (color, _) =>
+  mapmap(posmap, (pos: Pos, _) =>
+    make_pawncapture_rays(pos, color)
+  ))
+
+
+
 export const initial_pieces = (() => {
   let res = new Map()
 
@@ -91,10 +147,12 @@ export function play_moves(situation: Situation, moves: Array<string>) {
       return
     }
 
-    if (!situation_uci_after(situation, uci)) {
+    let ns = situation_uci_after(situation, uci)
+    if (ns) {
+      return situation_after(situation, ns.action)
+    } else {
       console.log(situation.board.pieces.get(58), move, uci)
     }
-    return situation_uci_after(situation, uci)?.after
   }, situation)
 }
 
@@ -106,35 +164,88 @@ export function situation_uci_after(situation: Situation, uci: Uci) {
 
 export function situation_moves(situation: Situation) {
   let { board } = situation
-  let actions = board_actions(board)
+
+
+  let kings: ColorMap<Pos | undefined> = { w: undefined, b: undefined }
+  let rooks: Array<Pos> = []
+
+  let actions: Array<AllActions> = []
+
+  for (let [pos, piece] of board.pieces) {
+    if (piece.role === 'k') {
+      kings[piece.color] = pos
+    }
+    if (piece.role === 'r') {
+      rooks.push(pos)
+    }
+
+    if (piece.color === situation.turn) {
+
+      let _actions = board_actions(board, pos, piece)
+
+      actions = actions.concat(_actions)
+    }
+  }
+
+  let _actions = rooks.flatMap(pos => {
+    let piece = board_pos(board, pos)!
+    return board_castle(board, pos, kings[piece.color]!)
+  })
+
+  actions = actions.concat(_actions)
+
+  actions = actions.filter(_ => situation_action_turn_filter(situation, _))
+  actions = actions.filter(_ => action_valid_filter(situation, _))
 
   return actions.map(_ => situation_action_move(situation, _))
 }
 
-function board_actions(board: Board): Array<AllActions> {
-  let { pieces } = board
+function situation_action_turn_filter(situation: Situation, action: AllActions) {
+
+  let piece = board_pos(situation.board, action.orig)
+
+  if (!piece || piece.color !== situation.turn) {
+    return false
+  }
+  return true
+}
+
+function action_valid_filter(situation: Situation, action: AllActions) {
+
+  if ("blocks" in action && action.blocks.length > 0) {
+    return false
+  }
+  if ("capture" in action && 
+    action.capture &&
+    board_pos(situation.board, action.capture)!.color ===
+    board_pos(situation.board, action.orig)!.color) {
+    return false
+  }
+  if (action.action === 'pawncapture' && !action.capture) {
+    return false
+  }
+  return true
+}
+
+function board_actions(board: Board, pos: Pos, piece: PieceOrPawn): Array<AllActions> {
   let res: Array<AllActions> = []
 
-  for (let [pos, piece] of pieces) {
-    if (isPawn(piece)) {
-     res = res.concat(board_pawncapture(board, pos, piece.color))
-     res = res.concat(board_pawnpush(board, pos, piece.color))
-    } else {
-      res = res.concat(board_slide(board, pos, piece.role))
-    } 
-  }
+  if (isPawn(piece)) {
+    res = res.concat(board_pawncapture(board, pos, piece.color))
+    res = res.concat(board_pawnpush(board, pos, piece.color))
+  } else {
+    res = res.concat(board_slide(board, pos, piece.role))
+  } 
   return res
 }
 
 export function situation_action_move(situation: Situation, action: AllActions) {
   let before = situation
   let piece = board_pos(situation.board, action.orig)!;
-  let after = situation_after(situation, action)
 
   return {
     action,
     before,
-    after,
     piece
   }
 }
@@ -172,7 +283,7 @@ export function situation_after(situation: Situation, action: AllActions) {
 
 
 function board_pawncapture(board: Board, pos: Pos, color: Color): Array<PawnCapture> {
-  return pawncapture_rays(pos, color).flatMap(ray => {
+  return pawncapture_rays[color].get(pos)!.flatMap(ray => {
     let { orig, dest } = ray
 
     let capturePiece = board_pos(board, ray.dest)
@@ -204,7 +315,7 @@ function board_pawncapture(board: Board, pos: Pos, color: Color): Array<PawnCapt
 }
 
 function board_pawnpush(board: Board, pos: Pos, color: Color): Array<PawnPush> {
-  return pawnpush_rays(pos, color).flatMap(ray => {
+  return pawnpush_rays[color].get(pos)!.flatMap(ray => {
     let { orig, dest } = ray
 
     let blocks = ray.between.flatMap(_ =>
@@ -255,9 +366,10 @@ function board_slide(board: Board, pos: Pos, role: RayRole): Array<Slide> {
 }
 
 
-function board_castle(board: Board, kingPos: Pos, pos: Pos) {
+function board_castle(board: Board, pos: Pos, kingPos: Pos): Array<Castle> {
   return castlesInfos.flatMap(castlesInfo => {
-    let ray = castle_rook_rays(pos, castlesInfo)
+    let ray = castle_rook_rays[castlesInfo.castles].get(pos)!
+
     if (!ray) { return [] }
     let blocks = ray.between.flatMap(_ =>
       (board_pos(board, _) && _) || [])
@@ -276,6 +388,7 @@ function board_castle(board: Board, kingPos: Pos, pos: Pos) {
         dest_rook: rookTo
       }
     }
+    return []
   })
 }
 
