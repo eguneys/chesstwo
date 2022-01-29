@@ -6,7 +6,7 @@ import { FRoot,
   add_node,
   root,
   node as fnode } from './fnode'
-import { Situation, initial_situation, fen_situation, situation_fen, situation_sanorcastles, SanOrCastles, sanOrCastles } from '../types';
+import { Situation, initial_situation, fen_situation, situation_fen, situation_sanorcastles, SanOrCastles, sanOrCastles, sanorcastles_san } from '../types';
 import { uci_char } from './ucichar'
 import { move_ucio } from './uci'
 
@@ -75,7 +75,7 @@ export default class StudyBuilder {
 
             return [path, qmove, after];
           } else {
-            console.warn('couldnt make ts move', situation_fen(situation), _.extra.san);
+            console.warn('couldnt make ts move', situation_fen(situation), sanorcastles_san(_.extra.san));
             this.errors.push([_.ply, _.extra])
           }
         }

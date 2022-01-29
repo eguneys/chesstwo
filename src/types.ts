@@ -456,7 +456,7 @@ export function situation_some(situation: Situation) {
           let dest = pos_dir(capture, pawn_push[piece.color])!
 
           let valid_turn = piece.color === turn
-          let valid_ok = !!capturePawn && (capturePawn.color !== piece.color)
+          let valid_ok = !!capturePawn && capturePawn.role === 'p' && (capturePawn.color !== piece.color)
           let valid_king = false
 
           posactions_add(slide_actions, {
